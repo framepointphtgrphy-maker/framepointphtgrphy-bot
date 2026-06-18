@@ -460,25 +460,32 @@ async function sendFinalSummary(uid) {
 }
 
 // ── OCCASION CARDS ────────────────────────────────────────────────────────────
+// Messenger max = 10 cards per carousel, so we split into 2 rows
 async function sendOccasionCards(uid) {
-  const allOccasions = [...TIER1_CARD_ORDER, ...TIER2_CARD_ORDER];
-
-  const elements = allOccasions.map(occ => ({
+  // Row 1: Tier 1 (7 cards + Others = 8 cards)
+  const row1 = TIER1_CARD_ORDER.map(occ => ({
     title:     occ,
     subtitle:  "Tap to select",
     image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
     buttons:   [{ type: "postback", title: `Select ${occ}`, payload: `OCC_${encodeURIComponent(occ)}` }],
   }));
-
-  // Others always last
-  elements.push({
+  row1.push({
     title:     "Others",
     subtitle:  "Gender Reveal, Baby Shower & more",
     image_url: OCCASION_IMAGES["Others"],
     buttons:   [{ type: "postback", title: "Select Others", payload: "OCC_Others" }],
   });
 
-  await sendGenericTemplate(uid, elements);
+  // Row 2: Tier 2 (6 cards)
+  const row2 = TIER2_CARD_ORDER.map(occ => ({
+    title:     occ,
+    subtitle:  "Tap to select",
+    image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
+    buttons:   [{ type: "postback", title: `Select ${occ}`, payload: `OCC_${encodeURIComponent(occ)}` }],
+  }));
+
+  await sendGenericTemplate(uid, row1);
+  await sendGenericTemplate(uid, row2);
 }
 
 async function sendOthersSubCards(uid) {
