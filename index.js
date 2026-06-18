@@ -35,47 +35,41 @@ const INCLUSIONS = {
   default: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
-    "Soft copies via Google Drive (within 3–5 days)",
+    "Soft copies via Google Drive (within 3-5 days)",
     "Basic editing & color grading",
-    
   ],
   Birthday: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
-    "Soft copies via Google Drive (within 3–5 days)",
+    "Soft copies via Google Drive (within 3-5 days)",
     "Basic editing & color grading",
-    
     "Birthday-themed shot list",
   ],
   "Civil Wedding": [
     "1 Professional Photographer",
     "2-hour shoot coverage",
-    "Soft copies via Google Drive (within 5–7 days)",
+    "Soft copies via Google Drive (within 5-7 days)",
     "Basic editing & color grading",
-    
   ],
   "Pre-nup": [
     "1 Professional Photographer",
     "2-hour shoot coverage",
     "1 location",
-    "Soft copies via Google Drive (within 3–5 days)",
+    "Soft copies via Google Drive (within 3-5 days)",
     "Basic editing & color grading",
-    
   ],
   Maternity: [
     "1 Professional Photographer",
     "2-hour indoor/outdoor session",
-    "Soft copies via Google Drive (within 3–5 days)",
+    "Soft copies via Google Drive (within 3-5 days)",
     "Basic editing & color grading",
-    
   ],
   Pictorial: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
     "1 location",
-    "Soft copies via Google Drive (within 3–5 days)",
+    "Soft copies via Google Drive (within 3-5 days)",
     "Basic editing & color grading",
-    
   ],
 };
 
@@ -83,10 +77,20 @@ function getInclusions(occasion) {
   return INCLUSIONS[occasion] || INCLUSIONS.default;
 }
 
+// ── TRANSPORT & ADDITIONAL NOTES ─────────────────────────────────────────────
+const TRANSPORT_NOTE =
+  "📌 Additional Notes:\n" +
+  "  • ₱500 per additional hour\n\n" +
+  "🚗 Transportation Fee:\n" +
+  "  • 14km and below — FREE\n" +
+  "  • 15km – 20km — ₱400\n" +
+  "  • 21km – 28km — ₱700\n" +
+  "  • 29km – 35km — ₱1,000\n" +
+  "  • 36km and above — To be checked with our team\n\n" +
+  "📍 To measure distance, check Google Maps from your venue to:\n" +
+  "  Jollibee G. Tuazon, Manila";
+
 // ── OCCASION IMAGES ───────────────────────────────────────────────────────────
-// ↓↓ IMPORTANT: Replace each value with the publicly hosted URL of your photo.
-// Upload these images to your server, CDN, or Facebook CDN, then paste the URLs here.
-// File names match what you uploaded: Birthday.png, Christening_Baptism.png, etc.
 const OCCASION_IMAGES = {
   "Birthday":            "https://i.ibb.co/xKVc5v1J/Birthday.png",
   "Christening/Baptism": "https://i.ibb.co/Z6gY1xz6/Christening-Baptism.png",
@@ -105,7 +109,6 @@ const OCCASION_IMAGES = {
 };
 
 // ── CARD ORDER ────────────────────────────────────────────────────────────────
-// Tier 1 card order: common ones first, Others last
 const TIER1_CARD_ORDER = [
   "Birthday",
   "Christening/Baptism",
@@ -114,10 +117,7 @@ const TIER1_CARD_ORDER = [
   "Debut",
   "Graduation",
   "Family Reunion",
-  // "Others" card is appended at the end separately
 ];
-
-// Tier 2 card order
 const TIER2_CARD_ORDER = [
   "Civil Wedding",
   "Pre-nup",
@@ -336,18 +336,20 @@ async function handleMessage(uid, text) {
     return;
   }
 
-  // Intercept package/rate questions at any step
+  // Intercept package/rate/inclusion questions at any step
   if (/inclusion|kasama|included|package|rate|price|magkano|how much|ano.*kasama|anong.*package/i.test(t)) {
     if (s.occasion) {
       const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
-      await sendText(uid, `Here's what's included for *${s.occasion}* (${s.price || getPrice(s.occasion)}):\n\n${inc}`);
+      await sendText(uid, `Here's what's included for ${s.occasion} (${s.price || getPrice(s.occasion)}):\n\n${inc}`);
+      await sendText(uid, TRANSPORT_NOTE);
     } else {
       await sendText(uid,
         `Our packages:\n\n` +
-        `📌 *Tier 1 – ₱2,499*\nBirthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower\n\n` +
-        `📌 *Tier 2 – ₱3,499*\nCivil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n` +
+        `Tier 1 - ₱2,499\nBirthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower\n\n` +
+        `Tier 2 - ₱3,499\nCivil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n` +
         `All packages include a professional photographer, 2-hour coverage, and soft copies via Google Drive. 😊`
       );
+      await sendText(uid, TRANSPORT_NOTE);
     }
     if (s.step === "collect_details") await askForDetails(uid);
     return;
@@ -404,9 +406,9 @@ async function handleMessage(uid, text) {
       }
 
       if (parsed.date && !looksLikeDate(parsed.date)) {
-        await sendText(uid, "⚠️ I couldn't read the date clearly. Please use a format like *July 20, 2025* or *07/20/2025*.");
+        await sendText(uid, "I couldn't read the date clearly. Please use a format like July 20, 2025 or 07/20/2025.");
       } else if (parsed.date && isPastDate(parsed.date) && !s.date) {
-        await sendText(uid, "⚠️ It looks like that date has already passed. Please double-check your event date! 📅");
+        await sendText(uid, "It looks like that date has already passed. Please double-check your event date!");
       }
 
       const missing = getMissingFields(s);
@@ -420,7 +422,7 @@ async function handleMessage(uid, text) {
 
     default:
       await sendButtonMsg(uid,
-        "Not sure what you mean. 😊 Tap below or type *hi* to start.",
+        "Not sure what you mean. 😊 Tap below or type hi to start.",
         [
           { type: "postback", title: "📅 Book an Appointment", payload: "START_BOOKING" },
           { type: "postback", title: "💬 Talk to Our Team",    payload: "TALK_HUMAN"    },
@@ -435,17 +437,18 @@ async function sendFinalSummary(uid) {
   const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
 
   const summary =
-    `✅ *Booking Inquiry Received!*\n\n` +
+    `✅ Booking Inquiry Received!\n\n` +
     `👤 Client Name : ${s.name}\n` +
     `🌟 Celebrant   : ${s.celebrant}\n` +
     `🎉 Occasion    : ${s.occasion}\n` +
     `📅 Date        : ${s.date}\n` +
     `📍 Location    : ${s.venue}\n` +
     `💰 Rate        : ${s.price}\n\n` +
-    `📦 *What's Included:*\n${inc}\n\n` +
-    `Our team will reach out to confirm your booking shortly. Thank you for choosing Framepoint Photography! 🙏`;
+    `📦 What's Included:\n${inc}`;
 
   await sendText(uid, summary);
+  await sendText(uid, TRANSPORT_NOTE);
+  await sendText(uid, "Our team will reach out to confirm your booking shortly. Thank you for choosing Framepoint Photography! 🙏");
   await sendButtonMsg(uid,
     "Is there anything else you need?",
     [
@@ -456,8 +459,7 @@ async function sendFinalSummary(uid) {
   sessions[uid] = { step: "done" };
 }
 
-
-// -- OCCASION CARDS -----------------------------------------------------------
+// ── OCCASION CARDS ────────────────────────────────────────────────────────────
 async function sendOccasionCards(uid) {
   const allOccasions = [...TIER1_CARD_ORDER, ...TIER2_CARD_ORDER];
 
@@ -480,7 +482,6 @@ async function sendOccasionCards(uid) {
 }
 
 async function sendOthersSubCards(uid) {
-  // Use quick replies (no image, just buttons) for Others sub-types
   await callAPI({
     recipient: { id: uid },
     message: {
@@ -493,7 +494,6 @@ async function sendOthersSubCards(uid) {
     },
   });
 }
-
 
 // ── MESSENGER API HELPERS ─────────────────────────────────────────────────────
 async function callAPI(body) {
