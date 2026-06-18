@@ -42,7 +42,7 @@ const INCLUSIONS = {
   Birthday: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
-   "Soft copies via Google Drive (within 3–5 days)",
+    "Soft copies via Google Drive (within 3–5 days)",
     "Basic editing & color grading",
     
     "Birthday-themed shot list",
