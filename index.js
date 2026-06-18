@@ -1,50 +1,208 @@
 const express = require("express");
-const axios = require("axios");
-const app = express();
+const axios   = require("axios");
+const app     = express();
 app.use(express.json());
 
-// ── CONFIG ── paste your tokens here ──────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────────
 const PAGE_ACCESS_TOKEN = process.env.PAGE_ACCESS_TOKEN || "YOUR_PAGE_ACCESS_TOKEN";
 const VERIFY_TOKEN      = process.env.VERIFY_TOKEN      || "framepointbot2024";
-// ─────────────────────────────────────────────────────────────────────────────
 
-// In-memory session store (resets on redeploy — fine for MVP)
+// ── SESSION STORE ─────────────────────────────────────────────────────────────
 const sessions = {};
 
-// ── PRICING TABLE ─────────────────────────────────────────────────────────────
-const PRICES = {
-  Birthday: {
-    Kiddie: { "Photo Only": "₱4,000", "Photo + Video": "₱6,500" },
-    Adult:  { "Photo Only": "₱5,000", "Photo + Video": "₱8,000" },
-    Debut:  { "Photo Only": "₱6,000", "Photo + Video": "₱10,000" },
-  },
-  Wedding:     { "Photo Only": "₱8,000",  "Photo + Video": "₱15,000" },
-  Christening: { "Photo Only": "₱4,000",  "Photo + Video": "₱6,500"  },
-  Graduation:  { "Photo Only": "₱4,500",  "Photo + Video": "₱7,000"  },
-  Corporate:   { "Photo Only": "₱6,000",  "Photo + Video": "₱10,000" },
-  Pictorial:   { "Photo Only": "₱3,500",  "Photo + Video": "₱5,500"  },
-  Others:      null,
+// ── PRICING ───────────────────────────────────────────────────────────────────
+const TIER1_OCCASIONS = [
+  "Birthday", "Christening/Baptism", "Debut", "Marriage Proposal",
+  "Family Reunion", "Graduation", "Pictorial",
+];
+const TIER2_OCCASIONS = [
+  "Civil Wedding", "Pre-nup", "Maternity",
+  "Corporate Party", "Conferences", "Concert",
+];
+const OTHERS_SUB = [
+  { title: "Gender Reveal", price: "₱2,499" },
+  { title: "Baby Shower",   price: "₱2,499" },
+];
+
+function getPrice(occasion) {
+  if (TIER1_OCCASIONS.includes(occasion)) return "₱2,499";
+  if (TIER2_OCCASIONS.includes(occasion)) return "₱3,499";
+  return "₱2,499";
+}
+
+// ── INCLUSIONS ────────────────────────────────────────────────────────────────
+const INCLUSIONS = {
+  default: [
+    "1 Professional Photographer",
+    "2-hour shoot coverage",
+    "Soft copies via Google Drive (within 5–7 days)",
+    "Basic editing & color grading",
+    "Online gallery link",
+  ],
+  Birthday: [
+    "1 Professional Photographer",
+    "2-hour shoot coverage",
+    "Soft copies via Google Drive (within 5–7 days)",
+    "Basic editing & color grading",
+    "Online gallery link",
+    "Birthday-themed shot list",
+  ],
+  "Civil Wedding": [
+    "1 Professional Photographer",
+    "Up to 4-hour coverage (ceremony + reception)",
+    "Soft copies via Google Drive (within 7 days)",
+    "Basic editing & color grading",
+    "Online gallery link",
+  ],
+  "Pre-nup": [
+    "1 Professional Photographer",
+    "3-hour shoot coverage",
+    "1 location",
+    "Soft copies via Google Drive (within 7 days)",
+    "Basic editing & color grading",
+    "Online gallery link",
+  ],
+  Maternity: [
+    "1 Professional Photographer",
+    "2-hour indoor/outdoor session",
+    "Soft copies via Google Drive (within 5–7 days)",
+    "Basic editing & color grading",
+    "Online gallery link",
+  ],
+  Pictorial: [
+    "1 Professional Photographer",
+    "2-hour shoot coverage",
+    "1 location",
+    "Soft copies via Google Drive (within 5–7 days)",
+    "Basic editing & color grading",
+    "Online gallery link",
+  ],
 };
 
-// ── EVENT IMAGE URLs ──────────────────────────────────────────────────────────
-// Replace these with your actual Framepoint Photography photos!
-const EVENT_IMAGES = {
-  Birthday:    "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400",
-  Wedding:     "https://images.unsplash.com/photo-1519741497674-611481863552?w=400",
-  Christening: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400",
-  Graduation:  "https://images.unsplash.com/photo-1627556704283-84ec105b4dde?w=400",
-  Corporate:   "https://images.unsplash.com/photo-1511578314322-379afb476865?w=400",
-  Pictorial:   "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400",
-  Others:      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=400",
+function getInclusions(occasion) {
+  return INCLUSIONS[occasion] || INCLUSIONS.default;
+}
+
+// ── OCCASION IMAGES ───────────────────────────────────────────────────────────
+// ↓↓ IMPORTANT: Replace each value with the publicly hosted URL of your photo.
+// Upload these images to your server, CDN, or Facebook CDN, then paste the URLs here.
+// File names match what you uploaded: Birthday.png, Christening_Baptism.png, etc.
+const OCCASION_IMAGES = {
+  "Birthday":            "https://i.ibb.co/xKVc5v1J/Birthday.png",
+  "Christening/Baptism": "https://i.ibb.co/Z6gY1xz6/Christening-Baptism.png",
+  "Civil Wedding":       "https://i.ibb.co/xK64vrg1/Civil-Wedding.png",
+  "Concert":             "https://i.ibb.co/WWYjhzRx/Concert.png",
+  "Conferences":         "https://i.ibb.co/pvGgwSFV/Conference.png",
+  "Corporate Party":     "https://i.ibb.co/tT41CdxY/Corporate-Party.png",
+  "Debut":               "https://i.ibb.co/7xJDrGSb/Debut.png",
+  "Family Reunion":      "https://i.ibb.co/GzT5NXV/Family-Reunion.png",
+  "Graduation":          "https://i.ibb.co/HfyjkdC2/Graduation.png",
+  "Marriage Proposal":   "https://i.ibb.co/vCpBTzYc/Marriage-Proposal.png",
+  "Maternity":           "https://i.ibb.co/7x8Fh9Br/Maternity.png",
+  "Others":              "https://i.ibb.co/Qvz5nX4M/Others.png",
+  "Pictorial":           "https://i.ibb.co/Nggsgp9d/Pictorial.png",
+  "Pre-nup":             "https://i.ibb.co/Qj6hG9Lt/Prenup.png",
 };
+
+// ── CARD ORDER ────────────────────────────────────────────────────────────────
+// Tier 1 card order: common ones first, Others last
+const TIER1_CARD_ORDER = [
+  "Birthday",
+  "Christening/Baptism",
+  "Marriage Proposal",
+  "Pictorial",
+  "Debut",
+  "Graduation",
+  "Family Reunion",
+  // "Others" card is appended at the end separately
+];
+
+// Tier 2 card order
+const TIER2_CARD_ORDER = [
+  "Civil Wedding",
+  "Pre-nup",
+  "Maternity",
+  "Corporate Party",
+  "Conferences",
+  "Concert",
+];
+
+// ── VALIDATION HELPERS ────────────────────────────────────────────────────────
+function looksLikeDate(text) {
+  const t = text.trim();
+  const patterns = [
+    /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}(,?\s*\d{4})?\b/i,
+    /\b\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?\b/,
+    /\b\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}\b/,
+    /\b\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s*\d{0,4}\b/i,
+    /\b(next|this|coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december)\b/i,
+  ];
+  return patterns.some(p => p.test(t));
+}
+
+function isPastDate(text) {
+  try {
+    const d = new Date(text);
+    if (isNaN(d.getTime())) return false;
+    const today = new Date(); today.setHours(0,0,0,0);
+    return d < today;
+  } catch { return false; }
+}
+
+function looksLikeName(text) {
+  const t = text.trim();
+  return t.length >= 2
+    && /^[a-zA-ZÀ-ÿ\s'\-\.]+$/.test(t)
+    && !t.includes("?")
+    && !t.toLowerCase().includes("http");
+}
+
+function looksLikeVenue(text) {
+  const t = text.trim().toLowerCase();
+  const bad = ["yes","no","okay","ok","sure","oo","hindi","di","wala","nalang",
+               "dont know","don't know","tbd","not yet","maybe","baka","siguro"];
+  return !bad.includes(t) && t.length >= 3;
+}
+
+// ── PARSE FREE-FORM DETAILS BLOB ──────────────────────────────────────────────
+function parseDetailBlob(text) {
+  const result = {};
+
+  const datePat = [
+    /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s+\d{1,2},?\s*\d{4}\b/i,
+    /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/,
+    /\b\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}\b/,
+    /\b\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{4}\b/i,
+    /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}\b/i,
+  ];
+  for (const p of datePat) {
+    const m = text.match(p);
+    if (m) { result.date = m[0]; break; }
+  }
+
+  const lines = text.split(/[\n,|\/\\]+/).map(l => l.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    const lo = line.toLowerCase();
+    if (result.date && lo.includes(result.date.toLowerCase())) continue;
+
+    if (/\b(at|sa|venue|location|place|held|in|city|hall|hotel|resort|park|church|chapel|resto|restaurant|barangay|brgy|bgy|qc|manila|makati|taguig|pasig|cavite|laguna|batangas|bulacan|pampanga|rizal|paranaque|las pinas|muntinlupa|caloocan|malabon|valenzuela|navotas|marikina|pasay|pateros)\b/i.test(lo)) {
+      if (!result.venue) result.venue = line;
+      continue;
+    }
+
+    if (looksLikeName(line) && !result.name) {
+      result.name = line;
+      continue;
+    }
+  }
+
+  return result;
+}
 
 // ── WEBHOOK VERIFICATION ──────────────────────────────────────────────────────
 app.get("/webhook", (req, res) => {
-  if (
-    req.query["hub.mode"] === "subscribe" &&
-    req.query["hub.verify_token"] === VERIFY_TOKEN
-  ) {
-    console.log("Webhook verified!");
+  if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === VERIFY_TOKEN) {
     res.status(200).send(req.query["hub.challenge"]);
   } else {
     res.sendStatus(403);
@@ -53,195 +211,282 @@ app.get("/webhook", (req, res) => {
 
 // ── WEBHOOK RECEIVER ──────────────────────────────────────────────────────────
 app.post("/webhook", async (req, res) => {
-  res.sendStatus(200); // always ack immediately
+  res.sendStatus(200);
   const body = req.body;
   if (body.object !== "page") return;
 
   for (const entry of body.entry) {
     for (const event of entry.messaging) {
-      const senderId = event.sender.id;
-      if (!sessions[senderId]) sessions[senderId] = { step: "start" };
-
-      if (event.postback) {
-        await handlePostback(senderId, event.postback.payload);
-      } else if (event.message && !event.message.is_echo) {
-        await handleMessage(senderId, event.message.text || "");
+      const uid = event.sender.id;
+      if (!sessions[uid]) {
+        sessions[uid] = { step: "idle" };
+        await sendWelcomeCard(uid);
+        continue;
       }
+      if (event.postback)
+        await handlePostback(uid, event.postback.payload);
+      else if (event.message && !event.message.is_echo)
+        await handleMessage(uid, event.message.text || "");
     }
   }
 });
 
-// ── HANDLE POSTBACK (button taps) ────────────────────────────────────────────
+// ── WELCOME CARD ──────────────────────────────────────────────────────────────
+async function sendWelcomeCard(uid) {
+  await sendButtonMsg(uid,
+    "Hi! Welcome to Framepoint Photography 📸\n\nCapturing your most precious moments. Tap below to get started!",
+    [{ type: "postback", title: "📅 Book an Appointment", payload: "START_BOOKING" }]
+  );
+}
+
+// ── POSTBACK HANDLER ──────────────────────────────────────────────────────────
 async function handlePostback(uid, payload) {
   const s = sessions[uid];
 
-  if (payload === "GET_STARTED") {
-    s.step = "event";
-    await sendText(uid,
-      "Hi! Welcome to Framepoint Photography! 📸\n\nI'm here to help you book your shoot. What type of event are you planning?"
-    );
-    await sendEventCards(uid);
+  if (payload === "START_BOOKING" || payload === "BOOK_ANOTHER") {
+    sessions[uid] = { step: "occasion" };
+    await sendText(uid, "Let's get your shoot booked! 🎉\n\nWhich occasion are you celebrating?");
+    await sendOccasionCards(uid);
     return;
   }
 
-  if (payload.startsWith("EVENT_")) {
-    const event = payload.replace("EVENT_", "");
-    s.event = event;
-    if (event === "Birthday") {
-      s.step = "btype";
-      await sendText(uid, "A birthday shoot — love it! 🎂 What type of birthday is this?");
-      await sendQuickReplies(uid, "Choose one:", ["Kiddie", "Adult", "Debut"]);
-    } else if (event === "Others") {
-      s.step = "other_desc";
-      await sendText(uid, "No problem! Please describe your event and we'll prepare a custom quote for you.");
+  if (payload.startsWith("OCC_")) {
+    const occ = decodeURIComponent(payload.replace("OCC_", ""));
+    s.occasion = occ;
+    if (occ === "Others") {
+      s.step = "others_sub";
+      await sendText(uid, "Which of these fits your event?");
+      await sendOthersSubCards(uid);
     } else {
-      s.step = "coverage";
-      await sendText(uid, `Great choice! What coverage do you need for your ${event}?`);
-      await sendQuickReplies(uid, "Select coverage:", ["Photo Only", "Photo + Video"]);
+      s.price = getPrice(occ);
+      s.step = "collect_details";
+      await askForDetails(uid);
     }
     return;
   }
 
-  if (payload.startsWith("BTYPE_")) {
-    s.btype = payload.replace("BTYPE_", "");
-    s.step = "coverage";
-    await sendText(uid, `A ${s.btype} birthday! What coverage do you need?`);
-    await sendQuickReplies(uid, "Select coverage:", ["Photo Only", "Photo + Video"]);
-    return;
-  }
-
-  if (payload.startsWith("COVERAGE_")) {
-    s.coverage = payload.replace("COVERAGE_", "").replace("_", " + ");
-    s.step = "name";
-    await sendText(uid, "Perfect! May I have your full name?");
-    return;
-  }
-
-  if (payload === "BOOK_ANOTHER") {
-    sessions[uid] = { step: "event" };
-    await sendText(uid, "Sure! What type of event are you planning?");
-    await sendEventCards(uid);
+  if (payload.startsWith("OTHERSUB_")) {
+    const sub = decodeURIComponent(payload.replace("OTHERSUB_", ""));
+    const found = OTHERS_SUB.find(o => o.title === sub);
+    s.occasion = sub;
+    s.price = found ? found.price : "₱2,499";
+    s.step = "collect_details";
+    await askForDetails(uid);
     return;
   }
 
   if (payload === "TALK_HUMAN") {
     await sendText(uid,
-      "Our team has been notified and will message you shortly! 😊\n\nYou can also reach us directly:\n📘 facebook.com/framepoint.co"
+      "Our team has been notified and will message you shortly! 😊\n\n" +
+      "You can also reach us directly:\n📘 facebook.com/framepoint.co"
     );
     sessions[uid] = { step: "done" };
     return;
   }
 }
 
-// ── HANDLE FREE-TEXT MESSAGES ─────────────────────────────────────────────────
+// ── ASK FOR ALL DETAILS AT ONCE ───────────────────────────────────────────────
+async function askForDetails(uid) {
+  const s = sessions[uid];
+  const missing = getMissingFields(s);
+
+  const labels = {
+    name:      "📝 Your full name",
+    celebrant: "🌟 Name of celebrant / person to be photographed",
+    date:      "📅 Event date (e.g., July 20, 2025)",
+    venue:     "📍 Venue or location",
+  };
+
+  const needed = missing.map(f => `• ${labels[f]}`).join("\n");
+
+  await sendText(uid,
+    `Almost there! Please send the following details in one message:\n\n${needed}\n\n` +
+    `You can type them all together, e.g.:\n_Maria Santos, Aling Nena, July 20 2025, Taguig City_`
+  );
+}
+
+// ── WHICH FIELDS ARE STILL MISSING ───────────────────────────────────────────
+function getMissingFields(s) {
+  const fields = [];
+  if (!s.name)      fields.push("name");
+  if (!s.celebrant) fields.push("celebrant");
+  if (!s.date)      fields.push("date");
+  if (!s.venue)     fields.push("venue");
+  return fields;
+}
+
+// ── FREE-TEXT HANDLER ─────────────────────────────────────────────────────────
 async function handleMessage(uid, text) {
   const s = sessions[uid];
   const t = text.trim();
 
-  switch (s.step) {
-    case "start":
-      s.step = "event";
+  // Global restart shortcut
+  if (/^(hi|hello|hey|oi|musta|kamusta|start|book)$/i.test(t)) {
+    sessions[uid] = { step: "occasion" };
+    await sendText(uid, "Hi! Let's find you the perfect shoot. 📸\n\nWhat occasion are you celebrating?");
+    await sendOccasionCards(uid);
+    return;
+  }
+
+  // Intercept package/rate questions at any step
+  if (/inclusion|kasama|included|package|rate|price|magkano|how much|ano.*kasama|anong.*package/i.test(t)) {
+    if (s.occasion) {
+      const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
+      await sendText(uid, `Here's what's included for *${s.occasion}* (${s.price || getPrice(s.occasion)}):\n\n${inc}`);
+    } else {
       await sendText(uid,
-        "Hi! Welcome to Framepoint Photography! 📸\n\nI'm here to help you book your shoot. What type of event are you planning?"
+        `Our packages:\n\n` +
+        `📌 *Tier 1 – ₱2,499*\nBirthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower\n\n` +
+        `📌 *Tier 2 – ₱3,499*\nCivil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n` +
+        `All packages include a professional photographer, 2-hour coverage, and soft copies via Google Drive. 😊`
       );
-      await sendEventCards(uid);
+    }
+    if (s.step === "collect_details") await askForDetails(uid);
+    return;
+  }
+
+  switch (s.step) {
+
+    case "idle":
+    case "done":
+      await sendButtonMsg(uid,
+        "Hey! 😊 Our team will be with you shortly for any follow-up questions.\n\nWant to book another event?",
+        [
+          { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
+          { type: "postback", title: "💬 Talk to Our Team",   payload: "TALK_HUMAN"   },
+        ]
+      );
       break;
 
-    case "event":
-      // Try to match typed event names
-      const matched = Object.keys(PRICES).find(e =>
-        t.toLowerCase().includes(e.toLowerCase())
-      );
+    case "occasion": {
+      const all = [...TIER1_OCCASIONS, ...TIER2_OCCASIONS, "Others", ...OTHERS_SUB.map(o => o.title)];
+      const matched = all.find(o => t.toLowerCase().includes(o.toLowerCase()));
       if (matched) {
-        await handlePostback(uid, `EVENT_${matched}`);
+        await handlePostback(uid, `OCC_${encodeURIComponent(matched)}`);
       } else {
-        await sendText(uid, "Please choose your event type below:");
-        await sendEventCards(uid);
+        await sendText(uid, "Please choose your occasion from the options below:");
+        await sendOccasionCards(uid);
       }
       break;
+    }
 
-    case "btype":
-      const types = ["Kiddie", "Adult", "Debut"];
-      const bt = types.find(b => t.toLowerCase().includes(b.toLowerCase()));
-      if (bt) {
-        await handlePostback(uid, `BTYPE_${bt}`);
+    case "others_sub": {
+      const matched = OTHERS_SUB.find(o => t.toLowerCase().includes(o.title.toLowerCase()));
+      if (matched) {
+        await handlePostback(uid, `OTHERSUB_${encodeURIComponent(matched.title)}`);
       } else {
-        await sendQuickReplies(uid, "Please choose a birthday type:", types);
+        await sendText(uid, "Please choose one of these options:");
+        await sendOthersSubCards(uid);
       }
       break;
+    }
 
-    case "coverage":
-      if (t.toLowerCase().includes("video")) {
-        await handlePostback(uid, "COVERAGE_Photo_+_Video");
-      } else if (t.toLowerCase().includes("photo")) {
-        await handlePostback(uid, "COVERAGE_Photo Only");
+    case "collect_details": {
+      const parsed = parseDetailBlob(t);
+
+      if (parsed.name  && looksLikeName(parsed.name)   && !s.name)  s.name  = parsed.name;
+      if (parsed.date  && looksLikeDate(parsed.date)   && !s.date)  s.date  = parsed.date;
+      if (parsed.venue && looksLikeVenue(parsed.venue) && !s.venue) s.venue = parsed.venue;
+
+      if (!s.celebrant) {
+        const parts = t.split(/[\n,]+/).map(p => p.trim()).filter(p => looksLikeName(p));
+        if (parts.length >= 2 && !s.name)     { s.name = parts[0]; s.celebrant = parts[1]; }
+        else if (parts.length >= 2 && s.name) { s.celebrant = parts.find(p => p !== s.name) || null; }
+        else if (parts.length === 1 && s.name && !s.celebrant) { s.celebrant = parts[0]; }
+      }
+
+      if (parsed.date && !looksLikeDate(parsed.date)) {
+        await sendText(uid, "⚠️ I couldn't read the date clearly. Please use a format like *July 20, 2025* or *07/20/2025*.");
+      } else if (parsed.date && isPastDate(parsed.date) && !s.date) {
+        await sendText(uid, "⚠️ It looks like that date has already passed. Please double-check your event date! 📅");
+      }
+
+      const missing = getMissingFields(s);
+      if (missing.length === 0) {
+        await sendFinalSummary(uid);
       } else {
-        await sendQuickReplies(uid, "Please choose your coverage:", ["Photo Only", "Photo + Video"]);
+        await askForDetails(uid);
       }
       break;
-
-    case "name":
-      s.name = t;
-      s.step = "venue";
-      await sendText(uid, `Nice to meet you, ${t}! 😊 What is your venue or location?`);
-      break;
-
-    case "venue":
-      s.venue = t;
-      s.step = "date";
-      await sendText(uid, "What is your preferred event date?");
-      break;
-
-    case "date":
-      s.date = t;
-      await sendBookingSummary(uid);
-      break;
-
-    case "other_desc":
-      s.otherDesc = t;
-      s.step = "name";
-      await sendText(uid, `Got it! I've noted your event. May I have your full name?`);
-      break;
+    }
 
     default:
-      await sendText(uid,
-        "Thanks for reaching out to Framepoint Photography! 📸 Our team will get back to you shortly.\n\nType \"hi\" to start a new booking."
+      await sendButtonMsg(uid,
+        "Not sure what you mean. 😊 Tap below or type *hi* to start.",
+        [
+          { type: "postback", title: "📅 Book an Appointment", payload: "START_BOOKING" },
+          { type: "postback", title: "💬 Talk to Our Team",    payload: "TALK_HUMAN"    },
+        ]
       );
   }
 }
 
-// ── SEND BOOKING SUMMARY ─────────────────────────────────────────────────────
-async function sendBookingSummary(uid) {
+// ── FINAL SUMMARY ─────────────────────────────────────────────────────────────
+async function sendFinalSummary(uid) {
   const s = sessions[uid];
-  let rate = "Custom quote — our team will reach out";
-
-  if (s.event === "Birthday" && s.btype) {
-    rate = PRICES.Birthday[s.btype]?.[s.coverage] || rate;
-  } else if (s.event && PRICES[s.event]) {
-    rate = PRICES[s.event][s.coverage] || rate;
-  }
+  const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
 
   const summary =
-    `✅ Booking Inquiry Summary\n\n` +
-    `👤 Name: ${s.name || "—"}\n` +
-    `🎉 Event: ${s.event}${s.btype ? ` (${s.btype})` : ""}\n` +
-    `📷 Coverage: ${s.coverage || "—"}\n` +
-    `📍 Venue: ${s.venue || "—"}\n` +
-    `📅 Date: ${s.date || "—"}\n` +
-    `💰 Rate: ${rate}\n\n` +
-    `Our team will confirm your booking soon! Thank you for choosing Framepoint Photography. 🙏`;
+    `✅ *Booking Inquiry Received!*\n\n` +
+    `👤 Client Name : ${s.name}\n` +
+    `🌟 Celebrant   : ${s.celebrant}\n` +
+    `🎉 Occasion    : ${s.occasion}\n` +
+    `📅 Date        : ${s.date}\n` +
+    `📍 Location    : ${s.venue}\n` +
+    `💰 Rate        : ${s.price}\n\n` +
+    `📦 *What's Included:*\n${inc}\n\n` +
+    `Our team will reach out to confirm your booking shortly. Thank you for choosing Framepoint Photography! 🙏`;
 
   await sendText(uid, summary);
-
-  await sendButtonMessage(uid,
+  await sendButtonMsg(uid,
     "Is there anything else you need?",
     [
-      { type: "postback", title: "Book another event", payload: "BOOK_ANOTHER" },
-      { type: "postback", title: "Talk to our team",   payload: "TALK_HUMAN"   },
+      { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
+      { type: "postback", title: "💬 Talk to Our Team",   payload: "TALK_HUMAN"   },
     ]
   );
-
   sessions[uid] = { step: "done" };
+}
+
+// ── OCCASION CARDS ────────────────────────────────────────────────────────────
+async function sendOccasionCards(uid) {
+  // ── Tier 1: Birthday, Christening, Marriage Proposal, Pictorial first; Others last ──
+  const t1elements = TIER1_CARD_ORDER.map(occ => ({
+    title:     occ,
+    subtitle:  "₱2,499 — Tap to select",
+    image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
+    buttons:   [{ type: "postback", title: `Select ${occ}`, payload: `OCC_${encodeURIComponent(occ)}` }],
+  }));
+  // Others card always last in Tier 1 row
+  t1elements.push({
+    title:     "Others",
+    subtitle:  "Gender Reveal, Baby Shower & more — ₱2,499",
+    image_url: OCCASION_IMAGES["Others"],
+    buttons:   [{ type: "postback", title: "Select Others", payload: "OCC_Others" }],
+  });
+
+  // ── Tier 2 ──
+  const t2elements = TIER2_CARD_ORDER.map(occ => ({
+    title:     occ,
+    subtitle:  "₱3,499 — Tap to select",
+    image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
+    buttons:   [{ type: "postback", title: `Select ${occ}`, payload: `OCC_${encodeURIComponent(occ)}` }],
+  }));
+
+  await sendText(uid, "🌟 *Tier 1 Occasions* – ₱2,499");
+  await sendGenericTemplate(uid, t1elements);
+  await sendText(uid, "💎 *Tier 2 Occasions* – ₱3,499");
+  await sendGenericTemplate(uid, t2elements);
+}
+
+async function sendOthersSubCards(uid) {
+  const elements = OTHERS_SUB.map(o => ({
+    title:     o.title,
+    subtitle:  `Rate: ${o.price}`,
+    image_url: OCCASION_IMAGES["Others"],
+    buttons:   [{ type: "postback", title: `Select ${o.title}`, payload: `OTHERSUB_${encodeURIComponent(o.title)}` }],
+  }));
+  await sendGenericTemplate(uid, elements);
 }
 
 // ── MESSENGER API HELPERS ─────────────────────────────────────────────────────
@@ -252,7 +497,7 @@ async function callAPI(body) {
       body
     );
   } catch (e) {
-    console.error("API error:", e.response?.data || e.message);
+    console.error("Messenger API error:", e.response?.data || e.message);
   }
 }
 
@@ -260,52 +505,25 @@ async function sendText(uid, text) {
   await callAPI({ recipient: { id: uid }, message: { text } });
 }
 
-async function sendQuickReplies(uid, text, options) {
-  await callAPI({
-    recipient: { id: uid },
-    message: {
-      text,
-      quick_replies: options.map(o => ({
-        content_type: "text",
-        title: o,
-        payload: o.startsWith("Photo") ? `COVERAGE_${o}` :
-                 ["Kiddie","Adult","Debut"].includes(o) ? `BTYPE_${o}` : o,
-      })),
-    },
-  });
-}
-
-async function sendEventCards(uid) {
-  const events = Object.keys(PRICES);
-  // Messenger generic template (image + title + button), max 10 cards
-  const elements = events.map(ev => ({
-    title: ev,
-    image_url: EVENT_IMAGES[ev] || EVENT_IMAGES.Others,
-    subtitle: ev === "Others" ? "Something special? Let us know!" : `Book your ${ev} shoot`,
-    buttons: [{ type: "postback", title: `Book ${ev}`, payload: `EVENT_${ev}` }],
-  }));
-
-  await callAPI({
-    recipient: { id: uid },
-    message: {
-      attachment: {
-        type: "template",
-        payload: {
-          template_type: "generic",
-          elements,
-        },
-      },
-    },
-  });
-}
-
-async function sendButtonMessage(uid, text, buttons) {
+async function sendButtonMsg(uid, text, buttons) {
   await callAPI({
     recipient: { id: uid },
     message: {
       attachment: {
         type: "template",
         payload: { template_type: "button", text, buttons },
+      },
+    },
+  });
+}
+
+async function sendGenericTemplate(uid, elements) {
+  await callAPI({
+    recipient: { id: uid },
+    message: {
+      attachment: {
+        type: "template",
+        payload: { template_type: "generic", elements },
       },
     },
   });
