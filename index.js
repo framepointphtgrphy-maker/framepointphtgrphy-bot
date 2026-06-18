@@ -233,9 +233,17 @@ app.post("/webhook", async (req, res) => {
 
 // ── WELCOME CARD ──────────────────────────────────────────────────────────────
 async function sendWelcomeCard(uid) {
+  await sendText(uid,
+    "Hi there! Welcome to Framepoint Photography 📸\n\n" +
+    "We capture your most precious moments — birthdays, weddings, debuts, and more!\n\n" +
+    "How can we help you today?"
+  );
   await sendButtonMsg(uid,
-    "Hi! Welcome to Framepoint Photography 📸\n\nCapturing your most precious moments. Tap below to get started!",
-    [{ type: "postback", title: "📅 Book an Appointment", payload: "START_BOOKING" }]
+    "Tap below to get started:",
+    [
+      { type: "postback", title: "📅 Book an Appointment", payload: "START_BOOKING" },
+      { type: "postback", title: "💬 Talk to Our Team",    payload: "TALK_HUMAN"    },
+    ]
   );
 }
 
@@ -448,46 +456,44 @@ async function sendFinalSummary(uid) {
   sessions[uid] = { step: "done" };
 }
 
-// ── OCCASION CARDS ────────────────────────────────────────────────────────────
+
+// -- OCCASION CARDS -----------------------------------------------------------
 async function sendOccasionCards(uid) {
-  // ── Tier 1: Birthday, Christening, Marriage Proposal, Pictorial first; Others last ──
-  const t1elements = TIER1_CARD_ORDER.map(occ => ({
+  const allOccasions = [...TIER1_CARD_ORDER, ...TIER2_CARD_ORDER];
+
+  const elements = allOccasions.map(occ => ({
     title:     occ,
-    subtitle:  "₱2,499 — Tap to select",
+    subtitle:  "Tap to select",
     image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
     buttons:   [{ type: "postback", title: `Select ${occ}`, payload: `OCC_${encodeURIComponent(occ)}` }],
   }));
-  // Others card always last in Tier 1 row
-  t1elements.push({
+
+  // Others always last
+  elements.push({
     title:     "Others",
-    subtitle:  "Gender Reveal, Baby Shower & more — ₱2,499",
+    subtitle:  "Gender Reveal, Baby Shower & more",
     image_url: OCCASION_IMAGES["Others"],
     buttons:   [{ type: "postback", title: "Select Others", payload: "OCC_Others" }],
   });
 
-  // ── Tier 2 ──
-  const t2elements = TIER2_CARD_ORDER.map(occ => ({
-    title:     occ,
-    subtitle:  "₱3,499 — Tap to select",
-    image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
-    buttons:   [{ type: "postback", title: `Select ${occ}`, payload: `OCC_${encodeURIComponent(occ)}` }],
-  }));
-
-  await sendText(uid, "🌟 *Tier 1 Occasions* – ₱2,499");
-  await sendGenericTemplate(uid, t1elements);
-  await sendText(uid, "💎 *Tier 2 Occasions* – ₱3,499");
-  await sendGenericTemplate(uid, t2elements);
+  await sendGenericTemplate(uid, elements);
 }
 
 async function sendOthersSubCards(uid) {
-  const elements = OTHERS_SUB.map(o => ({
-    title:     o.title,
-    subtitle:  `Rate: ${o.price}`,
-    image_url: OCCASION_IMAGES["Others"],
-    buttons:   [{ type: "postback", title: `Select ${o.title}`, payload: `OTHERSUB_${encodeURIComponent(o.title)}` }],
-  }));
-  await sendGenericTemplate(uid, elements);
+  // Use quick replies (no image, just buttons) for Others sub-types
+  await callAPI({
+    recipient: { id: uid },
+    message: {
+      text: "Please choose your event type:",
+      quick_replies: OTHERS_SUB.map(o => ({
+        content_type: "text",
+        title: o.title,
+        payload: `OTHERSUB_${encodeURIComponent(o.title)}`,
+      })),
+    },
+  });
 }
+
 
 // ── MESSENGER API HELPERS ─────────────────────────────────────────────────────
 async function callAPI(body) {
