@@ -20,8 +20,10 @@ const TIER2_OCCASIONS = [
   "Corporate Party", "Conferences", "Concert",
 ];
 const OTHERS_SUB = [
-  { title: "Gender Reveal", price: "₱2,499" },
-  { title: "Baby Shower",   price: "₱2,499" },
+  { title: "Gender Reveal",        price: "₱2,499" },
+  { title: "Baby Shower",          price: "₱2,499" },
+  { title: "Monthsary/Anniversary", price: "₱2,499" },
+  { title: "Let me type my own",   price: null },
 ];
 
 function getPrice(occasion) {
@@ -278,15 +280,39 @@ async function handlePostback(uid, payload) {
     const found = OTHERS_SUB.find(o => o.title === sub);
     s.occasion = sub;
     s.price = found ? found.price : "₱2,499";
-    s.step = "collect_details";
-    await askForDetails(uid);
+    s.step = "othersub_specify";
+    await sendText(uid,
+      `Great! You selected *${sub}*. 🎉
+
+` +
+      `Could you please specify more details about your event?
+` +
+      `(e.g., theme, number of guests, special requests, etc.)`
+    );
     return;
   }
 
   if (payload === "TALK_HUMAN") {
     await sendText(uid,
-      "Our team has been notified and will message you shortly! 😊\n\n" +
-      "You can also reach us directly:\n📘 facebook.com/framepoint.co"
+      "Our team has been notified and will message you shortly! 😊
+
+" +
+      "You can also reach us directly:
+📘 facebook.com/framepoint.co"
+    );
+    sessions[uid] = { step: "done" };
+    return;
+  }
+
+  if (payload === "THATS_ALL") {
+    await sendText(uid,
+      "You're very welcome! 😊🙏
+
+" +
+      "Thank you for choosing Framepoint Photography! We're excited to capture your special moments.
+
+" +
+      "See you on your event day! 📸✨"
     );
     sessions[uid] = { step: "done" };
     return;
@@ -327,6 +353,34 @@ function getMissingFields(s) {
 async function handleMessage(uid, text) {
   const s = sessions[uid];
   const t = text.trim();
+
+  // Thank you reply
+  if (/^(thank you|thanks|thank u|salamat|ty|tysm|maraming salamat)$/i.test(t)) {
+    await sendButtonMsg(uid,
+      "You're most welcome! 😊 We're excited to capture your special moments!
+
+Is there anything else we can help you with?",
+      [
+        { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
+        { type: "postback", title: "💬 Talk to Our Team",   payload: "TALK_HUMAN"   },
+      ]
+    );
+    return;
+  }
+
+  // Thank you response
+  if (/^(thank you|thanks|salamat|ty|thank u|thankyou)$/i.test(t)) {
+    await sendButtonMsg(uid,
+      "You're welcome! 😊 We're excited to capture your special moments!
+
+Is there anything else we can help you with?",
+      [
+        { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
+        { type: "postback", title: "💬 Talk to Our Team",   payload: "TALK_HUMAN"   },
+      ]
+    );
+    return;
+  }
 
   // Global restart shortcut
   if (/^(hi|hello|hey|oi|musta|kamusta|start|book)$/i.test(t)) {
@@ -391,6 +445,42 @@ async function handleMessage(uid, text) {
       break;
     }
 
+    case "others_specify": {
+      s.eventNotes = t;
+      s.step = "collect_details";
+      await sendText(uid, "Got it! Thanks for sharing those details. 😊");
+      await askForDetails(uid);
+      break;
+    }
+
+    case "others_custom": {
+      s.occasion = t;
+      s.step = "others_specify";
+      await sendText(uid,
+        `Got it — a *${t}* shoot! 📸
+
+` +
+        `Could you tell us a bit more? For example:
+` +
+        `• Theme or concept
+` +
+        `• Number of guests
+` +
+        `• Any special requests`
+      );
+      break;
+    }
+
+
+
+    case "othersub_specify": {
+      s.otherDetails = t;
+      s.step = "collect_details";
+      await sendText(uid, `Got it! Noted: "${t}" 📝`);
+      await askForDetails(uid);
+      break;
+    }
+
     case "collect_details": {
       const parsed = parseDetailBlob(t);
 
@@ -443,6 +533,7 @@ async function sendFinalSummary(uid) {
     `🎉 Occasion    : ${s.occasion}\n` +
     `📅 Date        : ${s.date}\n` +
     `📍 Location    : ${s.venue}\n` +
+    (s.eventNotes ? `📝 Event Notes : ${s.eventNotes}\n` : "") +
     `💰 Rate        : ${s.price}\n\n` +
     `📦 What's Included:\n${inc}`;
 
@@ -452,8 +543,9 @@ async function sendFinalSummary(uid) {
   await sendButtonMsg(uid,
     "Is there anything else you need?",
     [
-      { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
-      { type: "postback", title: "💬 Talk to Our Team",   payload: "TALK_HUMAN"   },
+      { type: "postback", title: "📅 Book Another Event",   payload: "BOOK_ANOTHER" },
+      { type: "postback", title: "💬 Talk to Our Team",     payload: "TALK_HUMAN"   },
+      { type: "postback", title: "✅ That's all, thank you!", payload: "THATS_ALL"   },
     ]
   );
   sessions[uid] = { step: "done" };
@@ -545,3 +637,35 @@ async function sendGenericTemplate(uid, elements) {
 // ── SERVER ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Framepoint bot running on port ${PORT}`));
+
+// ── ONE-TIME: Run this endpoint once to set up Get Started button ─────────────
+// Visit: https://your-railway-url.app/setup once after deploying
+app.get("/setup", async (req, res) => {
+  try {
+    await axios.post(
+      `https://graph.facebook.com/v19.0/me/messenger_profile?access_token=${PAGE_ACCESS_TOKEN}`,
+      {
+        get_started: { payload: "START_BOOKING" },
+        greeting: [
+          {
+            locale: "default",
+            text: "Hi {{user_first_name}}! Welcome to Framepoint Photography 📸\n\nTap Get Started to book your shoot!",
+          },
+        ],
+        persistent_menu: [
+          {
+            locale: "default",
+            composer_input_disabled: false,
+            call_to_actions: [
+              { type: "postback", title: "📅 Book an Appointment", payload: "START_BOOKING" },
+              { type: "postback", title: "💬 Talk to Our Team",    payload: "TALK_HUMAN"    },
+            ],
+          },
+        ],
+      }
+    );
+    res.send("✅ Messenger profile set up successfully! Get Started button, greeting, and persistent menu are now active.");
+  } catch (e) {
+    res.status(500).send("❌ Error: " + JSON.stringify(e.response?.data || e.message));
+  }
+});
