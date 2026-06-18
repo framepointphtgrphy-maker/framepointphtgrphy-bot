@@ -35,47 +35,47 @@ const INCLUSIONS = {
   default: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
-    "Soft copies via Google Drive (within 5–7 days)",
+    "Soft copies via Google Drive (within 3–5 days)",
     "Basic editing & color grading",
-    "Online gallery link",
+    
   ],
   Birthday: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
-    "Soft copies via Google Drive (within 5–7 days)",
+   "Soft copies via Google Drive (within 3–5 days)",
     "Basic editing & color grading",
-    "Online gallery link",
+    
     "Birthday-themed shot list",
   ],
   "Civil Wedding": [
     "1 Professional Photographer",
-    "Up to 4-hour coverage (ceremony + reception)",
-    "Soft copies via Google Drive (within 7 days)",
+    "2-hour shoot coverage",
+    "Soft copies via Google Drive (within 5–7 days)",
     "Basic editing & color grading",
-    "Online gallery link",
+    
   ],
   "Pre-nup": [
     "1 Professional Photographer",
-    "3-hour shoot coverage",
+    "2-hour shoot coverage",
     "1 location",
-    "Soft copies via Google Drive (within 7 days)",
+    "Soft copies via Google Drive (within 3–5 days)",
     "Basic editing & color grading",
-    "Online gallery link",
+    
   ],
   Maternity: [
     "1 Professional Photographer",
     "2-hour indoor/outdoor session",
-    "Soft copies via Google Drive (within 5–7 days)",
+    "Soft copies via Google Drive (within 3–5 days)",
     "Basic editing & color grading",
-    "Online gallery link",
+    
   ],
   Pictorial: [
     "1 Professional Photographer",
     "2-hour shoot coverage",
     "1 location",
-    "Soft copies via Google Drive (within 5–7 days)",
+    "Soft copies via Google Drive (within 3–5 days)",
     "Basic editing & color grading",
-    "Online gallery link",
+    
   ],
 };
 
