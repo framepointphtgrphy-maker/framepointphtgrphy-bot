@@ -31,68 +31,68 @@ function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 // ── HUMAN-SOUNDING REPLY POOLS ───────────────────────────────────────────────
 const GREET_REPLIES = [
-  "Heyy! 👋 Welcome to Framepoint Photography!\n\nMga experts kami sa pagcapture ng inyong pinakaspecial na moments — birthdays, weddings, debuts, at marami pa!\n\nPaano kita matutulungan ngayon? 😊",
-  "Hi! 😊 Framepoint Photography here!\n\nSpecialidad namin ang pagcapture ng mga priceless moments — from birthdays hanggang weddings!\n\nAno ang maipagagawa namin para sa inyo?",
-  "Hello! 📸 Welcome sa Framepoint Photography!\n\nKamusta? Ready kaming i-capture ang inyong special moments.\n\nAno ang okasyon ninyo? 😊",
+  "Hi! 😊 Welcome to Framepoint Photography!\n\nWe specialize in capturing your most special moments — birthdays, weddings, debuts, and more!\n\nHow can we help you today?",
+  "Hey! 👋 Framepoint Photography here!\n\nWe'd love to capture your special moments. What can we do for you? 😊",
+  "Hello! 📸 Welcome to Framepoint Photography!\n\nReady to capture your special moments. What's the occasion? 😊",
 ];
 
 const OCCASION_PROMPTS = [
-  "Nice! Let's get that booked. 📅\n\nAno pong occasion ninyo?",
-  "Sige, tulungan kita mag-book! 🎉\n\nPara sa anong occasion po?",
-  "Exciting! 📸 Anong event ninyo?",
+  "Let's get that booked! 📅 What's the occasion?",
+  "Sure, let's set that up! 🎉 What event is it for?",
+  "Exciting! 📸 What's the occasion?",
 ];
 
 const THANKS_REPLIES = [
-  "Walang anuman! 😊 Excited na kami para sa inyong event!\n\nMay iba pa ba akong maipagagawa?",
-  "Siyempre! 🎉 Excited na talaga kami para dito!\n\nMay kailangan ka pa ba?",
-  "Anytime! 😊 Handa kaming i-capture ang inyong moments!\n\nMay iba ka pa bang concerns?",
+  "You're welcome! 😊 We're excited to capture your special moments!\n\nAnything else I can help with?",
+  "Of course! 🎉 We're really excited for your event!\n\nNeed anything else?",
+  "Anytime! 😊 We can't wait to capture your moments!\n\nAnything else?",
 ];
 
 const DETAIL_ACK = [
-  "Got it! Salamat po. 🙏",
-  "Noted! Salamat. 😊",
-  "Perfect, noted na po! ✅",
-  "Nakuha ko na po! 😊",
+  "Got it! Thank you! 🙏",
+  "Noted! Thanks! 😊",
+  "Perfect, noted! ✅",
+  "Got that! 😊",
 ];
 
 const MISSING_INTRO = [
-  "Pwede mo pa ibigay yung kulang na details? 😊",
-  "Almost done! Kailangan ko pa lang yung iba: 👇",
-  "Konti na lang! Pwede mo ibigay yung iba pang details? 😊",
-  "Salamat sa info! Kulang-kulang lang: 👇",
+  "Could you send the missing details? 😊",
+  "Almost done! Just need a few more: 👇",
+  "So close! Can you fill in the rest? 😊",
+  "Thanks for that! Still need a couple more: 👇",
 ];
 
 const PAST_DATE_MSG = [
-  "Hmm, parang nakaraos na yung date na yan ah? 🤔 Pakicheck ulit ng event date ninyo!",
-  "Ay, mukhang lumipas na yung date na yan! Pwede mo ulit i-check? 😊",
+  "Hmm, it looks like that date has already passed! 🤔 Could you double-check your event date?",
+  "That date seems to be in the past — could you check again? 😊",
 ];
 
 const CUSTOM_EVENT_PROMPT = [
-  "Sige! Anong klaseng shoot po ang gusto ninyo? Describe mo lang! 😊",
-  "No problem! I-describe mo lang ang gusto mong shoot. 📸",
+  "Sure! What kind of shoot are you looking for? Just describe it! 😊",
+  "No problem! Tell me about the shoot you have in mind. 📸",
 ];
 
 const OTHERS_SPECIFY_PROMPT = (occ) => pick([
-  `Nice, ${occ}! 🎉 Pwede mo bang ibigay ang konting details?\n\n- Theme o concept\n- Bilang ng guests\n- May special requests ba?\n\nKahit konti lang okay na! 😊`,
-  `Ayos, ${occ}! 📸 Para makapag-prepare kami nang maayos, pwede mo bang ibahagi:\n\n- Theme o concept\n- Number of guests\n- Kahit anong special request\n\nHuwag mahiyang mag-share! 😊`,
+  `Nice, ${occ}! 🎉 Could you share a few details?\n\n- Theme or concept\n- Number of guests\n- Any special requests\n\nFeel free to share as much or as little as you like! 😊`,
+  `${occ} sounds fun! 📸 To help us prepare, could you share:\n\n- Theme or concept\n- Number of guests\n- Any special requests\n\nDon't be shy! 😊`,
 ]);
 
 const SUMMARY_CLOSING = [
-  "Ipapasa na namin ito sa aming team at mag-co-contact sila para i-confirm ang lahat. Salamat sa pagpili ng Framepoint Photography! 🎉📸",
-  "Ang aming team ay makikipag-ugnayan sa inyo para i-confirm ang booking. Maraming salamat at excited na kami para sa event ninyo! 🎉",
-  "I-rereach out na kayo ng aming team para sa confirmation. Excited na kami! Salamat sa tiwala sa Framepoint Photography! 📸🎉",
+  "Our team will reach out to confirm everything. Thank you for choosing Framepoint Photography! 🎉📸",
+  "We'll contact you shortly to confirm the booking. Thank you and we're excited for your event! 🎉",
+  "Our team will follow up for confirmation. Thank you for trusting Framepoint Photography! 📸🎉",
 ];
 
 const THATS_ALL_REPLIES = [
-  "Salamat! 🎉 Excited na kaming i-capture ang inyong special moments. Hanggang sa makita kayo! 📸",
-  "Maraming salamat sa pagpili ng Framepoint! 😊 Ingat at hanggang sa muli! 🎉",
-  "Salamat! 🙏 Maging amazing ang event ninyo — excited na kami! 📸",
+  "Thank you! 🎉 We're excited to capture your special moments. See you soon! 📸",
+  "Thanks for choosing Framepoint! 😊 Take care and see you at the event! 🎉",
+  "Thank you! 🙏 We hope your event is amazing — we can't wait! 📸",
 ];
 
 const TALK_HUMAN_REPLIES = [
   "Noted! Our team has been notified — brb! 😊",
-  "Got it! Ino-notify na namin ang team namin — brb! 🙏",
-  "Sure! Our team has been notified, they'll be with you shortly! 😊",
+  "Got it! Our team has been notified, they'll be with you shortly! 😊",
+  "Sure! Our team has been notified — brb! 🙏",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -341,15 +341,15 @@ async function handlePostback(uid, payload) {
     s.occasion = occ;
     if (occ === "Others") {
       s.step = "others_sub";
-      await sendText(uid, "Sige! Alin sa mga ito ang pinaka-akma sa event ninyo? 👇");
+      await sendText(uid, "Sure! Which of these fits your event? 👇");
       await sendOthersSubCards(uid);
     } else {
       s.price = getPrice(occ);
       s.step = "collect_details";
       await sendText(uid, pick([
-        `Ayos, ${occ}! 🎉 Mag-fill up lang tayo ng ilang details para ma-book na!`,
-        `${occ} pala! 📸 Excited! Kailangan ko lang ng ilang info para ma-set up natin ito.`,
-        `Nice choice — ${occ}! 🎉 Kunin ko lang ang details mo.`,
+        `${occ}! 🎉 Let's get that booked — just need a few details!`,
+        `${occ}! 📸 Exciting! Let me grab some info to set this up.`,
+        `Nice choice — ${occ}! 🎉 Let me get your details.`,
       ]));
       await askForDetails(uid);
     }
@@ -390,7 +390,7 @@ async function handlePostback(uid, payload) {
       await sendText(uid, "✅ Bot RESUMED — automated replies are back on.");
     } else {
       pauseBot(targetUid);
-      await sendText(uid, "⏸️ Bot PAUSED — ikaw na ang mag-rereply manually.\n\nI-tap ulit ang toggle para i-resume, o i-type 'bot on'.");
+      await sendText(uid, "⏸️ Bot PAUSED — you can now reply manually.\n\nTap the toggle again to resume, or type 'bot on'.");
     }
     return;
   }
@@ -403,16 +403,16 @@ async function askForDetails(uid) {
 
   const allFields = ["name", "celebrant", "date", "venue"];
   const labels = {
-    name:      "Iyong pangalan (booker)",
-    celebrant: "Pangalan ng celebrant / person to be photographed",
-    date:      "Petsa at oras ng event",
-    venue:     "Venue o lokasyon",
+    name:      "Your full name (booker)",
+    celebrant: "Name of celebrant / person to be photographed",
+    date:      "Event date & time",
+    venue:     "Venue / location",
   };
   const examples = {
-    name:      "hal. Maria Santos",
-    celebrant: "hal. Baby Esther",
-    date:      "hal. July 20, 2025 at 2:00 PM",
-    venue:     "hal. Taguig City o buong address",
+    name:      "e.g. Maria Santos",
+    celebrant: "e.g. Baby Esther",
+    date:      "e.g. July 20, 2025 at 2:00 PM",
+    venue:     "e.g. Taguig City or full address",
   };
 
   const neededFields = allFields.filter(f => missing.includes(f));
@@ -432,8 +432,8 @@ async function askForDetails(uid) {
   await sendText(uid,
     `${intro}\n\n` +
     numbered +
-    `\n\n✏️ I-send mo lang ganito (in order, separated by comma):\n${sampleParts.join(", ")}\n\n` +
-    `⚠️ Tips:\n• Sundin ang order (pangalan muna, venue last)\n• Comma ang separator sa bawat info\n• I-include ang oras sa date: July 20 2025 at 2PM`
+    `\n\n✏️ Reply like this (in order, separated by commas):\n${sampleParts.join(", ")}\n\n` +
+    `⚠️ Tips:\n• Keep them in order (name first, venue last)\n• Separate each with a comma\n• Include the time with the date: July 20 2025 at 2PM`
   );
 }
 
@@ -457,8 +457,8 @@ async function handleMessage(uid, text) {
     return;
   }
 
-  // Greetings — restart at any step
-  if (/^(hi+|hello|hey+|oi|musta|kamusta|start|book|good morning|gm|good afternoon|good evening|magandang|kumusta)[\s!]*$/i.test(t)) {
+  // Greetings — only short single-word/phrase greetings, not full sentences
+  if (/^(hi+|hello+|hey+|oi|musta|kamusta|start|good morning|gm|good afternoon|good evening|magandang umaga|magandang hapon|magandang gabi|kumusta)[\s!?.]*$/i.test(t)) {
     sessions[uid] = { step: "occasion" };
     await sendText(uid, pick(GREET_REPLIES));
     await sendButtonMsg(uid, "What would you like to do?", [
@@ -478,22 +478,22 @@ async function handleMessage(uid, text) {
   }
 
   // Package / price inquiry — expanded Taglish + English vocabulary
-  if (/inclusion|kasama|included|package|rate|price|magkano|mag kano|how much|presyo|bayad|mahal|mura|cost|fee|charge|libre|free|pricelist|price list|ilan|ilang piso|anong rate|anong price|anong presyo|quote|quotation|hm|hmm|affordable|halaga/i.test(t)) {
+  if (/inclusion|kasama|included|package|rate|price|magkano|mag kano|how much|presyo|bayad|mahal|mura|cost|fee|charge|libre|free|pricelist|price list|ilan|ilang piso|anong rate|anong price|anong presyo|quote|quotation|hm|hmm|affordable|halaga|mag hire|mag-hire|mag avail|mag-avail|gusto.*book|book.*photoshoot|hire.*photographer|photographer.*hire/i.test(t)) {
     if (s.occasion) {
       const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
       await sendText(uid,
-        `Eto po ang package namin para sa ${s.occasion}!\n\n` +
+        `Here's our ${s.occasion} package!\n\n` +
         `💰 Rate: ${s.price || getPrice(s.occasion)}\n\n` +
-        `📦 Kasama:\n${inc}`
+        `📦 What's included:\n${inc}`
       );
     } else {
       await sendText(uid,
-        "Eto ang aming packages:\n\n" +
+        "Here are our packages:\n\n" +
         "📦 Tier 1 — P2,499\n" +
         "Birthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower, Monthsary/Anniversary\n\n" +
         "📦 Tier 2 — P3,499\n" +
         "Civil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n" +
-        "Lahat ng packages ay may professional photographer, 2-hour coverage, at soft copies via Google Drive! 📸"
+        "All packages include a professional photographer, 2-hour coverage, and soft copies via Google Drive! 📸"
       );
     }
     await sendText(uid, TRANSPORT_NOTE);
@@ -515,7 +515,7 @@ async function handleMessage(uid, text) {
       if (matched) {
         await handlePostback(uid, "OCC_" + encodeURIComponent(matched));
       } else {
-        await sendText(uid, "I-tap lang ang occasion mo sa ibaba ha! 😊");
+        await sendText(uid, "Just tap your occasion from the options below! 😊");
         await sendOccasionCards(uid);
       }
       break;
@@ -526,7 +526,7 @@ async function handleMessage(uid, text) {
       if (matched) {
         await handlePostback(uid, "OTHERSUB_" + encodeURIComponent(matched.title));
       } else {
-        await sendText(uid, "Piliin mo lang sa mga option sa ibaba: 👇");
+        await sendText(uid, "Please choose from the options below: 👇");
         await sendOthersSubCards(uid);
       }
       break;
@@ -536,8 +536,8 @@ async function handleMessage(uid, text) {
       s.occasion = t;
       s.step = "others_specify";
       await sendText(uid, pick([
-        `Got it, ${t} shoot! 📸 Pwede mo bang ibigay ng konting details?\n\n- Theme o concept\n- Bilang ng guests\n- May special requests?`,
-        `Ayos, ${t}! 🎉 Para makapag-prepare kami, share mo lang:\n\n- Theme o concept\n- Number of guests\n- Anumang special request`,
+        `Got it — ${t} shoot! 📸 Could you share a few details?\n\n- Theme or concept\n- Number of guests\n- Any special requests?`,
+        `${t}! 🎉 To help us prepare, could you share:\n\n- Theme or concept\n- Number of guests\n- Any special requests`,
       ]));
       break;
     }
@@ -593,7 +593,7 @@ async function sendFinalSummary(uid) {
   const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
 
   const summary =
-    "🎉 Natanggap na ang inyong booking inquiry!\n\n" +
+    "🎉 Booking inquiry received!\n\n" +
     `👤 Client     : ${s.name}\n` +
     `🌟 Celebrant  : ${s.celebrant}\n` +
     `🎊 Occasion   : ${s.occasion}\n` +
@@ -601,7 +601,7 @@ async function sendFinalSummary(uid) {
     `📅 Date & Time: ${s.date}\n` +
     `📍 Location   : ${s.venue}\n` +
     `💰 Rate       : ${s.price}\n\n` +
-    `📦 Kasama sa Package:\n${inc}`;
+    `📦 What's Included:\n${inc}`;
 
   await sendText(uid, summary);
   await sendText(uid, TRANSPORT_NOTE);
@@ -615,7 +615,7 @@ async function sendFinalSummary(uid) {
 
   // Admin controls
   await sendButtonMsg(uid,
-    "🤖 Admin Controls\n\nBagong booking inquiry na natanggap mula sa user na ito.\n\nI-tap para i-pause ang bot kung gusto mong personally mag-reply — i-tap ulit para i-resume.",
+    "🤖 Admin Controls\n\nNew booking inquiry received from this user.\n\nTap below to pause the bot if you want to reply manually — tap again to resume.",
     [{ type: "postback", title: "⏸️ Pause / ▶️ Resume Bot", payload: "TOGGLE_BOT_" + uid }]
   );
 
@@ -647,7 +647,7 @@ async function sendOthersSubCards(uid) {
   await callAPI({
     recipient: { id: uid },
     message: {
-      text: "Piliin ang event type mo:",
+      text: "Please choose your event type:",
       quick_replies: OTHERS_SUB.map(o => ({
         content_type: "text", title: o.title,
         payload: "OTHERSUB_" + encodeURIComponent(o.title),
