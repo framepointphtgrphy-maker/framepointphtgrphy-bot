@@ -90,8 +90,9 @@ const THATS_ALL_REPLIES = [
 ];
 
 const TALK_HUMAN_REPLIES = [
-  "Sige po! Ino-notify na namin ang aming team at mag-me-message sila sa inyo agad.\n\nMaaari rin kayong makipag-ugnayan dito:\nfacebook.com/framepoint.co 😊",
-  "Naiintindihan ko! Ipinaaalam na namin sa aming team — makikipag-ugnayan sila sa inyo soon.\n\nDirect line: facebook.com/framepoint.co 😊",
+  "Noted! Our team has been notified — brb! 😊",
+  "Got it! Ino-notify na namin ang team namin — brb! 🙏",
+  "Sure! Our team has been notified, they'll be with you shortly! 😊",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -318,9 +319,9 @@ app.post("/webhook", async (req, res) => {
 // ── WELCOME ───────────────────────────────────────────────────────────────────
 async function sendWelcomeCard(uid) {
   await sendText(uid, pick(GREET_REPLIES));
-  await sendButtonMsg(uid, "Ano ang gusto mong gawin?", [
-    { type: "postback", title: "📅 Mag-book ng Shoot", payload: "START_BOOKING" },
-    { type: "postback", title: "💬 Kausapin ang Team",  payload: "TALK_HUMAN"    },
+  await sendButtonMsg(uid, "What would you like to do?", [
+    { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
+    { type: "postback", title: "Talk to Our Team",    payload: "TALK_HUMAN"    },
   ]);
 }
 
@@ -460,9 +461,9 @@ async function handleMessage(uid, text) {
   if (/^(hi+|hello|hey+|oi|musta|kamusta|start|book|good morning|gm|good afternoon|good evening|magandang|kumusta)[\s!]*$/i.test(t)) {
     sessions[uid] = { step: "occasion" };
     await sendText(uid, pick(GREET_REPLIES));
-    await sendButtonMsg(uid, "Ano ang gusto mong gawin?", [
-      { type: "postback", title: "📅 Mag-book ng Shoot", payload: "START_BOOKING" },
-      { type: "postback", title: "💬 Kausapin ang Team",  payload: "TALK_HUMAN"    },
+    await sendButtonMsg(uid, "What would you like to do?", [
+      { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
+      { type: "postback", title: "Talk to Our Team",    payload: "TALK_HUMAN"    },
     ]);
     return;
   }
@@ -470,17 +471,21 @@ async function handleMessage(uid, text) {
   // Thank you
   if (/^(thank you|thanks|salamat|ty|thank u|thankyou|tysm|maraming salamat|tnx|thx)[\s!]*$/i.test(t)) {
     await sendButtonMsg(uid, pick(THANKS_REPLIES), [
-      { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
-      { type: "postback", title: "💬 Kausapin ang Team",  payload: "TALK_HUMAN"   },
+      { type: "postback", title: "Book Another Event", payload: "BOOK_ANOTHER" },
+      { type: "postback", title: "Talk to Our Team",   payload: "TALK_HUMAN"   },
     ]);
     return;
   }
 
-  // Package / price inquiry
-  if (/inclusion|kasama|included|package|rate|price|magkano|how much|presyo|bayad/i.test(t)) {
+  // Package / price inquiry — expanded Taglish + English vocabulary
+  if (/inclusion|kasama|included|package|rate|price|magkano|mag kano|how much|presyo|bayad|mahal|mura|cost|fee|charge|libre|free|pricelist|price list|ilan|ilang piso|anong rate|anong price|anong presyo|quote|quotation|hm|hmm|affordable|halaga/i.test(t)) {
     if (s.occasion) {
       const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
-      await sendText(uid, `Eto po ang kasama sa ${s.occasion} package (${s.price || getPrice(s.occasion)}):\n\n${inc}`);
+      await sendText(uid,
+        `Eto po ang package namin para sa ${s.occasion}!\n\n` +
+        `💰 Rate: ${s.price || getPrice(s.occasion)}\n\n` +
+        `📦 Kasama:\n${inc}`
+      );
     } else {
       await sendText(uid,
         "Eto ang aming packages:\n\n" +
@@ -602,10 +607,10 @@ async function sendFinalSummary(uid) {
   await sendText(uid, TRANSPORT_NOTE);
   await sendText(uid, pick(SUMMARY_CLOSING));
 
-  await sendButtonMsg(uid, "May iba pa ba? 😊", [
-    { type: "postback", title: "📅 Book Another Event",    payload: "BOOK_ANOTHER" },
-    { type: "postback", title: "💬 Kausapin ang Team",     payload: "TALK_HUMAN"   },
-    { type: "postback", title: "✅ Okay na, salamat!",     payload: "THATS_ALL"    },
+  await sendButtonMsg(uid, "Is there anything else? 😊", [
+    { type: "postback", title: "Book Another Event",     payload: "BOOK_ANOTHER" },
+    { type: "postback", title: "Talk to Our Team",       payload: "TALK_HUMAN"   },
+    { type: "postback", title: "That's all, thank you!", payload: "THATS_ALL"    },
   ]);
 
   // Admin controls
@@ -620,19 +625,19 @@ async function sendFinalSummary(uid) {
 // ── CARD SENDERS ──────────────────────────────────────────────────────────────
 async function sendOccasionCards(uid) {
   const row1 = TIER1_CARD_ORDER.map(occ => ({
-    title: occ, subtitle: "I-tap para piliin",
+    title: occ, subtitle: "Tap to select",
     image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
-    buttons: [{ type: "postback", title: "Piliin: " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
+    buttons: [{ type: "postback", title: "Select " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
   }));
   row1.push({
-    title: "Others", subtitle: "Gender Reveal, Baby Shower at iba pa",
+    title: "Others", subtitle: "Gender Reveal, Baby Shower & more",
     image_url: OCCASION_IMAGES["Others"],
-    buttons: [{ type: "postback", title: "Piliin: Others", payload: "OCC_Others" }],
+    buttons: [{ type: "postback", title: "Select Others", payload: "OCC_Others" }],
   });
   const row2 = TIER2_CARD_ORDER.map(occ => ({
-    title: occ, subtitle: "I-tap para piliin",
+    title: occ, subtitle: "Tap to select",
     image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
-    buttons: [{ type: "postback", title: "Piliin: " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
+    buttons: [{ type: "postback", title: "Select " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
   }));
   await sendGenericTemplate(uid, row1);
   await sendGenericTemplate(uid, row2);
