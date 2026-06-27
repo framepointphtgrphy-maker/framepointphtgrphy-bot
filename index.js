@@ -8,26 +8,92 @@ const VERIFY_TOKEN      = process.env.VERIFY_TOKEN      || "framepointbot2024";
 const sessions = {};
 
 // ── BOT PAUSE TRACKER ────────────────────────────────────────────────────────
-// When admin manually replies, bot pauses for this user for BOT_PAUSE_HOURS
 const BOT_PAUSE_HOURS = 6;
-const pausedUsers = {}; // { uid: pausedUntilTimestamp }
+const pausedUsers = {};
 
 function isBotPaused(uid) {
   if (!pausedUsers[uid]) return false;
   if (Date.now() < pausedUsers[uid]) return true;
-  delete pausedUsers[uid]; // expired
+  delete pausedUsers[uid];
   return false;
 }
-
 function pauseBot(uid) {
   pausedUsers[uid] = Date.now() + BOT_PAUSE_HOURS * 60 * 60 * 1000;
-  console.log(`Bot paused for user ${uid} until ${new Date(pausedUsers[uid]).toISOString()}`);
+  console.log(`Bot paused for ${uid} until ${new Date(pausedUsers[uid]).toISOString()}`);
 }
-
 function resumeBot(uid) {
   delete pausedUsers[uid];
-  console.log(`Bot resumed for user ${uid}`);
+  console.log(`Bot resumed for ${uid}`);
 }
+
+// ── RANDOM PICK HELPER ───────────────────────────────────────────────────────
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ── HUMAN-SOUNDING REPLY POOLS ───────────────────────────────────────────────
+const GREET_REPLIES = [
+  "Heyy! 👋 Welcome to Framepoint Photography!\n\nMga experts kami sa pagcapture ng inyong pinakaspecial na moments — birthdays, weddings, debuts, at marami pa!\n\nPaano kita matutulungan ngayon? 😊",
+  "Hi! 😊 Framepoint Photography here!\n\nSpecialidad namin ang pagcapture ng mga priceless moments — from birthdays hanggang weddings!\n\nAno ang maipagagawa namin para sa inyo?",
+  "Hello! 📸 Welcome sa Framepoint Photography!\n\nKamusta? Ready kaming i-capture ang inyong special moments.\n\nAno ang okasyon ninyo? 😊",
+];
+
+const OCCASION_PROMPTS = [
+  "Nice! Let's get that booked. 📅\n\nAno pong occasion ninyo?",
+  "Sige, tulungan kita mag-book! 🎉\n\nPara sa anong occasion po?",
+  "Exciting! 📸 Anong event ninyo?",
+];
+
+const THANKS_REPLIES = [
+  "Walang anuman! 😊 Excited na kami para sa inyong event!\n\nMay iba pa ba akong maipagagawa?",
+  "Siyempre! 🎉 Excited na talaga kami para dito!\n\nMay kailangan ka pa ba?",
+  "Anytime! 😊 Handa kaming i-capture ang inyong moments!\n\nMay iba ka pa bang concerns?",
+];
+
+const DETAIL_ACK = [
+  "Got it! Salamat po. 🙏",
+  "Noted! Salamat. 😊",
+  "Perfect, noted na po! ✅",
+  "Nakuha ko na po! 😊",
+];
+
+const MISSING_INTRO = [
+  "Pwede mo pa ibigay yung kulang na details? 😊",
+  "Almost done! Kailangan ko pa lang yung iba: 👇",
+  "Konti na lang! Pwede mo ibigay yung iba pang details? 😊",
+  "Salamat sa info! Kulang-kulang lang: 👇",
+];
+
+const PAST_DATE_MSG = [
+  "Hmm, parang nakaraos na yung date na yan ah? 🤔 Pakicheck ulit ng event date ninyo!",
+  "Ay, mukhang lumipas na yung date na yan! Pwede mo ulit i-check? 😊",
+];
+
+const CUSTOM_EVENT_PROMPT = [
+  "Sige! Anong klaseng shoot po ang gusto ninyo? Describe mo lang! 😊",
+  "No problem! I-describe mo lang ang gusto mong shoot. 📸",
+];
+
+const OTHERS_SPECIFY_PROMPT = (occ) => pick([
+  `Nice, ${occ}! 🎉 Pwede mo bang ibigay ang konting details?\n\n- Theme o concept\n- Bilang ng guests\n- May special requests ba?\n\nKahit konti lang okay na! 😊`,
+  `Ayos, ${occ}! 📸 Para makapag-prepare kami nang maayos, pwede mo bang ibahagi:\n\n- Theme o concept\n- Number of guests\n- Kahit anong special request\n\nHuwag mahiyang mag-share! 😊`,
+]);
+
+const SUMMARY_CLOSING = [
+  "Ipapasa na namin ito sa aming team at mag-co-contact sila para i-confirm ang lahat. Salamat sa pagpili ng Framepoint Photography! 🎉📸",
+  "Ang aming team ay makikipag-ugnayan sa inyo para i-confirm ang booking. Maraming salamat at excited na kami para sa event ninyo! 🎉",
+  "I-rereach out na kayo ng aming team para sa confirmation. Excited na kami! Salamat sa tiwala sa Framepoint Photography! 📸🎉",
+];
+
+const THATS_ALL_REPLIES = [
+  "Salamat! 🎉 Excited na kaming i-capture ang inyong special moments. Hanggang sa makita kayo! 📸",
+  "Maraming salamat sa pagpili ng Framepoint! 😊 Ingat at hanggang sa muli! 🎉",
+  "Salamat! 🙏 Maging amazing ang event ninyo — excited na kami! 📸",
+];
+
+const TALK_HUMAN_REPLIES = [
+  "Sige po! Ino-notify na namin ang aming team at mag-me-message sila sa inyo agad.\n\nMaaari rin kayong makipag-ugnayan dito:\nfacebook.com/framepoint.co 😊",
+  "Naiintindihan ko! Ipinaaalam na namin sa aming team — makikipag-ugnayan sila sa inyo soon.\n\nDirect line: facebook.com/framepoint.co 😊",
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TIER1_OCCASIONS = ["Birthday","Christening/Baptism","Debut","Marriage Proposal","Family Reunion","Graduation","Pictorial"];
@@ -89,15 +155,15 @@ const INCLUSIONS = {
 function getInclusions(o) { return INCLUSIONS[o] || INCLUSIONS.default; }
 
 const TRANSPORT_NOTE =
-  "Additional Notes:\n" +
-  "  - P500 per additional hour\n\n" +
-  "Transportation Fee:\n" +
-  "  - 14km and below: FREE\n" +
-  "  - 15km - 20km: P400\n" +
-  "  - 21km - 28km: P700\n" +
-  "  - 29km - 35km: P1,000\n" +
-  "  - 36km and above: To be checked with our team\n\n" +
-  "To measure distance, check Google Maps from your venue to:\n" +
+  "📌 Additional Notes:\n" +
+  "  • P500 per additional hour\n\n" +
+  "🚗 Transportation Fee:\n" +
+  "  • 14km and below — FREE\n" +
+  "  • 15km–20km — P400\n" +
+  "  • 21km–28km — P700\n" +
+  "  • 29km–35km — P1,000\n" +
+  "  • 36km and above — to be checked with our team\n\n" +
+  "📍 Para malaman ang distance, i-check sa Google Maps mula sa venue ninyo papunta sa:\n" +
   "  Jollibee G. Tuazon, Manila";
 
 const OCCASION_IMAGES = {
@@ -120,21 +186,15 @@ const OCCASION_IMAGES = {
 const TIER1_CARD_ORDER = ["Birthday","Christening/Baptism","Marriage Proposal","Pictorial","Debut","Graduation","Family Reunion"];
 const TIER2_CARD_ORDER = ["Civil Wedding","Pre-nup","Maternity","Corporate Party","Conferences","Concert"];
 
-// ── DATE HELPERS ─────────────────────────────────────────────────────────────
+// ── DATE / TIME HELPERS ───────────────────────────────────────────────────────
 function looksLikeDate(text) {
-  const t = text.trim();
   return [
     /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s+\d{1,2}(,?\s*\d{4})?\b/i,
     /\b\d{1,2}[\/\-]\d{1,2}([\/\-]\d{2,4})?\b/,
     /\b\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}\b/,
     /\b\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\s*\d{0,4}\b/i,
     /\b(next|this|coming)\s+(monday|tuesday|wednesday|thursday|friday|saturday|sunday|january|february|march|april|may|june|july|august|september|october|november|december)\b/i,
-  ].some(p => p.test(t));
-}
-
-function looksLikeTime(text) {
-  return /\b(\d{1,2}(:\d{2})?\s*(am|pm|nn|mn|noon|midnight))\b/i.test(text) ||
-         /\b(\d{1,2}:\d{2})\b/.test(text);
+  ].some(p => p.test(text.trim()));
 }
 
 function extractTime(text) {
@@ -151,34 +211,30 @@ function isPastDate(text) {
     return d < today;
   } catch { return false; }
 }
-// ─────────────────────────────────────────────────────────────────────────────
 
 function looksLikeName(text) {
   const t = text.trim();
   return t.length >= 2 && /^[a-zA-ZÀ-ÿ\s'\-\.]+$/.test(t) && !t.includes("?") && !t.toLowerCase().includes("http");
 }
 
-// ── FIX 1: Much more permissive venue detection ───────────────────────────────
 function looksLikeVenue(text) {
-  const t = text.trim().toLowerCase();
+  const t = text.trim();
+  const tl = t.toLowerCase();
   const bad = ["yes","no","okay","ok","sure","oo","hindi","di","wala","nalang",
                "dont know","don't know","tbd","not yet","maybe","baka","siguro"];
-  if (bad.includes(t)) return false;
+  if (bad.includes(tl)) return false;
   if (t.length < 3) return false;
-  // Accept if it contains any location keyword OR is long enough to be an address
-  const locationKeywords = /\b(city|hall|hotel|resort|park|church|chapel|resto|restaurant|barangay|brgy|bgy|qc|manila|makati|taguig|pasig|cavite|laguna|batangas|bulacan|pampanga|rizal|paranaque|las pinas|muntinlupa|caloocan|malabon|valenzuela|navotas|marikina|pasay|pateros|quezon|alabang|bgc|fort|ortigas|mandaluyong|san juan|antipolo|cainta|taytay|binangonan|angono|home|house|backyard|garden|venue|place|location|st\.|ave\.|blvd\.|road|street|purok|sitio|subdivision|village|subd|condo|tower|bldg|building)\b/i;
-  return locationKeywords.test(t) || t.length >= 8;
+  // Accept venue acronyms (PICC, SMX, BGC, WMC, etc.)
+  if (/^[A-Z]{2,8}$/.test(t)) return true;
+  const locationKeywords = /\b(city|hall|hotel|resort|park|church|chapel|resto|restaurant|barangay|brgy|bgy|qc|manila|makati|taguig|pasig|cavite|laguna|batangas|bulacan|pampanga|rizal|paranaque|las pinas|muntinlupa|caloocan|malabon|valenzuela|navotas|marikina|pasay|pateros|quezon|alabang|bgc|fort|ortigas|mandaluyong|san juan|antipolo|cainta|taytay|binangonan|angono|home|house|backyard|garden|venue|place|location|st\.|ave\.|blvd\.|road|street|purok|sitio|subdivision|village|subd|condo|tower|bldg|building|picc|smx|wmc|ice|function|ballroom|ground)\b/i;
+  return locationKeywords.test(tl) || t.length >= 8;
 }
 
-// ── FIX 2: Improved detail parser — captures date+time, looser venue matching ─
 function parseDetailBlob(text) {
   const result = {};
-
-  // Extract time first (before date, so date regex doesn't eat it)
   const timeMatch = extractTime(text);
   if (timeMatch) result.time = timeMatch;
 
-  // Extract date
   const datePat = [
     /\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*\.?\s+\d{1,2},?\s*\d{4}\b/i,
     /\b\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}\b/,
@@ -191,23 +247,16 @@ function parseDetailBlob(text) {
     if (m) { result.date = m[0]; break; }
   }
 
-  // Split by newlines and commas to find name/venue
   const lines = text.split(/[\n,]+/).map(l => l.trim()).filter(Boolean);
   for (const line of lines) {
     const lo = line.toLowerCase();
-    // Skip line if it contains the date/time we already captured
     if (result.date && lo.includes(result.date.toLowerCase())) continue;
     if (result.time && lo.includes(result.time.toLowerCase())) continue;
-
-    // Venue detection — check for location keywords OR long descriptive text
-    const isVenueLine = /\b(at|sa|venue|location|place|held|in|city|hall|hotel|resort|park|church|chapel|resto|restaurant|barangay|brgy|bgy|qc|manila|makati|taguig|pasig|cavite|laguna|batangas|bulacan|pampanga|rizal|paranaque|las pinas|muntinlupa|caloocan|malabon|valenzuela|navotas|marikina|pasay|pateros|quezon|alabang|bgc|fort|ortigas|mandaluyong|san juan|antipolo|cainta|home|house|backyard|garden|st\.|ave\.|blvd\.|road|street|subdivision|village|condo|tower|bldg)\b/i.test(lo);
+    const isVenueLine = /\b(at|sa|venue|location|place|held|in|city|hall|hotel|resort|park|church|chapel|resto|restaurant|barangay|brgy|bgy|qc|manila|makati|taguig|pasig|cavite|laguna|batangas|bulacan|pampanga|rizal|paranaque|las pinas|muntinlupa|caloocan|malabon|valenzuela|navotas|marikina|pasay|pateros|quezon|alabang|bgc|fort|ortigas|mandaluyong|san juan|antipolo|cainta|home|house|backyard|garden|st\.|ave\.|blvd\.|road|street|subdivision|village|condo|tower|bldg|picc|smx|wmc)\b/i.test(lo);
     if (isVenueLine && !result.venue) { result.venue = line; continue; }
-
-    // Name detection
     if (looksLikeName(line) && !result.name) { result.name = line; }
   }
 
-  // Fallback: if still no venue and there's a line that's not a name/date, treat it as venue
   if (!result.venue) {
     for (const line of lines) {
       const lo = line.toLowerCase();
@@ -217,10 +266,10 @@ function parseDetailBlob(text) {
       if (looksLikeVenue(line)) { result.venue = line; break; }
     }
   }
-
   return result;
 }
 
+// ── WEBHOOK ──────────────────────────────────────────────────────────────────
 app.get("/webhook", (req, res) => {
   if (req.query["hub.mode"] === "subscribe" && req.query["hub.verify_token"] === VERIFY_TOKEN) {
     res.status(200).send(req.query["hub.challenge"]);
@@ -236,28 +285,21 @@ app.post("/webhook", async (req, res) => {
     for (const event of entry.messaging) {
       const uid = event.sender.id;
 
-      // ── DETECT ADMIN MANUAL REPLY (is_echo = true means PAGE sent the message) ──
+      // Admin echo — pause/resume bot
       if (event.message && event.message.is_echo) {
-        const adminText = (event.message.text || "").trim().toLowerCase();
-
-        // Admin can type "bot on" / "bot resume" to re-enable the bot for this user
+        const adminText = (event.message.text || "").trim();
         const recipientId = event.recipient && event.recipient.id;
         if (recipientId) {
           if (/^(bot on|resume bot|bot resume)$/i.test(adminText)) {
             resumeBot(recipientId);
           } else {
-            // Any other admin reply = pause the bot for this conversation
             pauseBot(recipientId);
           }
         }
-        continue; // don't process echo as user message
-      }
-
-      // ── BOT PAUSED — skip all automated responses ──────────────────────────
-      if (isBotPaused(uid)) {
-        console.log(`Bot is paused for user ${uid}, skipping.`);
         continue;
       }
+
+      if (isBotPaused(uid)) { console.log(`Paused for ${uid}, skipping.`); continue; }
 
       if (!sessions[uid]) {
         sessions[uid] = { step: "idle" };
@@ -273,20 +315,22 @@ app.post("/webhook", async (req, res) => {
   }
 });
 
+// ── WELCOME ───────────────────────────────────────────────────────────────────
 async function sendWelcomeCard(uid) {
-  await sendText(uid, "Hi there! Welcome to Framepoint Photography!\n\nWe capture your most precious moments - birthdays, weddings, debuts, and more!\n\nHow can we help you today?");
-  await sendButtonMsg(uid, "Tap below to get started:", [
-    { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
-    { type: "postback", title: "Talk to Our Team",    payload: "TALK_HUMAN"    },
+  await sendText(uid, pick(GREET_REPLIES));
+  await sendButtonMsg(uid, "Ano ang gusto mong gawin?", [
+    { type: "postback", title: "📅 Mag-book ng Shoot", payload: "START_BOOKING" },
+    { type: "postback", title: "💬 Kausapin ang Team",  payload: "TALK_HUMAN"    },
   ]);
 }
 
+// ── POSTBACKS ─────────────────────────────────────────────────────────────────
 async function handlePostback(uid, payload) {
   const s = sessions[uid];
 
   if (payload === "START_BOOKING" || payload === "BOOK_ANOTHER") {
     sessions[uid] = { step: "occasion" };
-    await sendText(uid, "Let's get your shoot booked!\n\nWhich occasion are you celebrating?");
+    await sendText(uid, pick(OCCASION_PROMPTS));
     await sendOccasionCards(uid);
     return;
   }
@@ -296,11 +340,16 @@ async function handlePostback(uid, payload) {
     s.occasion = occ;
     if (occ === "Others") {
       s.step = "others_sub";
-      await sendText(uid, "Which of these fits your event?");
+      await sendText(uid, "Sige! Alin sa mga ito ang pinaka-akma sa event ninyo? 👇");
       await sendOthersSubCards(uid);
     } else {
       s.price = getPrice(occ);
       s.step = "collect_details";
+      await sendText(uid, pick([
+        `Ayos, ${occ}! 🎉 Mag-fill up lang tayo ng ilang details para ma-book na!`,
+        `${occ} pala! 📸 Excited! Kailangan ko lang ng ilang info para ma-set up natin ito.`,
+        `Nice choice — ${occ}! 🎉 Kunin ko lang ang details mo.`,
+      ]));
       await askForDetails(uid);
     }
     return;
@@ -312,68 +361,64 @@ async function handlePostback(uid, payload) {
     s.price = found && found.price ? "P" + parseInt(found.price).toLocaleString() : "P2,499";
     if (sub === "Let me type my own") {
       s.step = "others_custom";
-      await sendText(uid, "Sure! Please describe your event and we will prepare everything for you.\n\nWhat kind of shoot are you looking for?");
+      await sendText(uid, pick(CUSTOM_EVENT_PROMPT));
     } else {
       s.occasion = sub;
       s.step = "others_specify";
-      await sendText(uid, "Great choice! Could you tell us a bit more about your " + sub + " event?\n\n- Theme or concept\n- Number of guests\n- Any special requests\n\nFeel free to share as much or as little as you like!");
+      await sendText(uid, OTHERS_SPECIFY_PROMPT(sub));
     }
     return;
   }
 
   if (payload === "TALK_HUMAN") {
-    await sendText(uid, "Our team has been notified and will message you shortly!\n\nYou can also reach us directly:\nfacebook.com/framepoint.co");
-    sessions[uid] = { step: "done" };
+    await sendText(uid, pick(TALK_HUMAN_REPLIES));
+    sessions[uid] = { step: "done", handedOff: true };
     return;
   }
 
   if (payload === "THATS_ALL") {
-    await sendText(uid, "You are very welcome! Thank you for choosing Framepoint Photography!\n\nWe are excited to capture your special moments. We will be in touch soon to confirm everything. Have a wonderful day!");
-    sessions[uid] = { step: "done" };
+    await sendText(uid, pick(THATS_ALL_REPLIES));
+    sessions[uid] = { step: "done", handedOff: true };
     return;
   }
 
-  // ── ADMIN BOT TOGGLE — tapped by admin directly in Messenger inbox ─────────
   if (payload.startsWith("TOGGLE_BOT_")) {
     const targetUid = payload.replace("TOGGLE_BOT_", "");
     if (isBotPaused(targetUid)) {
       resumeBot(targetUid);
-      await sendText(uid, "✅ Bot RESUMED for this conversation. Automated replies are back on.");
+      await sendText(uid, "✅ Bot RESUMED — automated replies are back on.");
     } else {
       pauseBot(targetUid);
-      await sendText(uid, "⏸️ Bot PAUSED. You can now reply manually.\n\nTap the toggle button again in the booking summary to turn it back on, or type 'bot on'.");
+      await sendText(uid, "⏸️ Bot PAUSED — ikaw na ang mag-rereply manually.\n\nI-tap ulit ang toggle para i-resume, o i-type 'bot on'.");
     }
     return;
   }
 }
 
-// ── FIX 3: Ask for date AND time together ────────────────────────────────────
+// ── ASK FOR MISSING DETAILS ───────────────────────────────────────────────────
 async function askForDetails(uid) {
   const s = sessions[uid];
   const missing = getMissingFields(s);
 
-  // Build a numbered, ordered prompt so parser can rely on position
   const allFields = ["name", "celebrant", "date", "venue"];
   const labels = {
-    name:      "Your full name",
-    celebrant: "Name of celebrant / person to be photographed",
-    date:      "Event date & time",
-    venue:     "Venue / location",
+    name:      "Iyong pangalan (booker)",
+    celebrant: "Pangalan ng celebrant / person to be photographed",
+    date:      "Petsa at oras ng event",
+    venue:     "Venue o lokasyon",
   };
   const examples = {
-    name:      "e.g. Maria Santos",
-    celebrant: "e.g. Baby Esther",
-    date:      "e.g. July 20, 2025 at 2:00 PM",
-    venue:     "e.g. Taguig City or full address",
+    name:      "hal. Maria Santos",
+    celebrant: "hal. Baby Esther",
+    date:      "hal. July 20, 2025 at 2:00 PM",
+    venue:     "hal. Taguig City o buong address",
   };
 
-  // Only show missing fields, but keep their original order (1→2→3→4)
   const neededFields = allFields.filter(f => missing.includes(f));
   const numbered = neededFields.map((f, i) =>
-    (i + 1) + ". " + labels[f] + "\n   " + examples[f]
+    `${i + 1}. ${labels[f]}\n   ${examples[f]}`
   ).join("\n\n");
 
-  // Build a sample reply using only the missing fields in order
   const sampleParts = neededFields.map(f => ({
     name:      "Maria Santos",
     celebrant: "Baby Esther",
@@ -381,15 +426,13 @@ async function askForDetails(uid) {
     venue:     "Taguig City",
   }[f]));
 
+  const intro = s.name || s.date ? pick(MISSING_INTRO) : "Para ma-process ang iyong booking, kailangan ko lang ang ilang details: 😊";
+
   await sendText(uid,
-    "📋 Please send the following details in this exact order, separated by commas:\n\n" +
+    `${intro}\n\n` +
     numbered +
-    "\n\n✏️ Example reply:\n" +
-    sampleParts.join(", ") +
-    "\n\n⚠️ Important:\n" +
-    "• Send them IN ORDER (name first, location last)\n" +
-    "• Use a comma between each detail\n" +
-    "• Date & time in one go: July 20 2025 at 2PM"
+    `\n\n✏️ I-send mo lang ganito (in order, separated by comma):\n${sampleParts.join(", ")}\n\n` +
+    `⚠️ Tips:\n• Sundin ang order (pangalan muna, venue last)\n• Comma ang separator sa bawat info\n• I-include ang oras sa date: July 20 2025 at 2PM`
   );
 }
 
@@ -402,73 +445,102 @@ function getMissingFields(s) {
   return fields;
 }
 
+// ── HANDLE USER MESSAGES ──────────────────────────────────────────────────────
 async function handleMessage(uid, text) {
   const s = sessions[uid];
   const t = text.trim();
 
-  if (/^(hi|hello|hey|oi|musta|kamusta|start|book)$/i.test(t)) {
-    sessions[uid] = { step: "occasion" };
-    await sendText(uid, "Hi! Let's find you the perfect shoot.\n\nWhat occasion are you celebrating?");
-    await sendOccasionCards(uid);
+  // Fully handed off — stay completely silent
+  if (s.step === "done" && s.handedOff) {
+    console.log(`Handoff silence for ${uid}: "${t}"`);
     return;
   }
 
-  if (/^(thank you|thanks|salamat|ty|thank u|thankyou|tysm|maraming salamat)$/i.test(t)) {
-    await sendButtonMsg(uid, "You are most welcome! We are excited to capture your special moments.\n\nIs there anything else we can help you with?", [
-      { type: "postback", title: "Book Another Event", payload: "BOOK_ANOTHER" },
-      { type: "postback", title: "Talk to Our Team",   payload: "TALK_HUMAN"   },
+  // Greetings — restart at any step
+  if (/^(hi+|hello|hey+|oi|musta|kamusta|start|book|good morning|gm|good afternoon|good evening|magandang|kumusta)[\s!]*$/i.test(t)) {
+    sessions[uid] = { step: "occasion" };
+    await sendText(uid, pick(GREET_REPLIES));
+    await sendButtonMsg(uid, "Ano ang gusto mong gawin?", [
+      { type: "postback", title: "📅 Mag-book ng Shoot", payload: "START_BOOKING" },
+      { type: "postback", title: "💬 Kausapin ang Team",  payload: "TALK_HUMAN"    },
     ]);
     return;
   }
 
-  if (/inclusion|kasama|included|package|rate|price|magkano|how much/i.test(t)) {
+  // Thank you
+  if (/^(thank you|thanks|salamat|ty|thank u|thankyou|tysm|maraming salamat|tnx|thx)[\s!]*$/i.test(t)) {
+    await sendButtonMsg(uid, pick(THANKS_REPLIES), [
+      { type: "postback", title: "📅 Book Another Event", payload: "BOOK_ANOTHER" },
+      { type: "postback", title: "💬 Kausapin ang Team",  payload: "TALK_HUMAN"   },
+    ]);
+    return;
+  }
+
+  // Package / price inquiry
+  if (/inclusion|kasama|included|package|rate|price|magkano|how much|presyo|bayad/i.test(t)) {
     if (s.occasion) {
-      const inc = getInclusions(s.occasion).map(i => "  - " + i).join("\n");
-      await sendText(uid, "Here is what is included for " + s.occasion + " (" + (s.price || getPrice(s.occasion)) + "):\n\n" + inc);
-      await sendText(uid, TRANSPORT_NOTE);
+      const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
+      await sendText(uid, `Eto po ang kasama sa ${s.occasion} package (${s.price || getPrice(s.occasion)}):\n\n${inc}`);
     } else {
-      await sendText(uid, "Our packages:\n\nTier 1 - P2,499\nBirthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower, Monthsary/Anniversary\n\nTier 2 - P3,499\nCivil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\nAll packages include a professional photographer, 2-hour coverage, and soft copies via Google Drive.");
-      await sendText(uid, TRANSPORT_NOTE);
+      await sendText(uid,
+        "Eto ang aming packages:\n\n" +
+        "📦 Tier 1 — P2,499\n" +
+        "Birthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower, Monthsary/Anniversary\n\n" +
+        "📦 Tier 2 — P3,499\n" +
+        "Civil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n" +
+        "Lahat ng packages ay may professional photographer, 2-hour coverage, at soft copies via Google Drive! 📸"
+      );
     }
+    await sendText(uid, TRANSPORT_NOTE);
     if (s.step === "collect_details") await askForDetails(uid);
     return;
   }
 
   switch (s.step) {
+
+    // Silent after booking done — only greetings above can re-engage
     case "idle":
     case "done":
-      await sendButtonMsg(uid, "Hey! Our team will be with you shortly for any follow-up questions.\n\nWant to do something else?", [
-        { type: "postback", title: "Book Another Event", payload: "BOOK_ANOTHER" },
-        { type: "postback", title: "Talk to Our Team",   payload: "TALK_HUMAN"   },
-      ]);
+      console.log(`Silent in done/idle for ${uid}: "${t}"`);
       break;
 
     case "occasion": {
       const all = [...TIER1_OCCASIONS, ...TIER2_OCCASIONS, "Others", ...OTHERS_SUB.map(o => o.title)];
       const matched = all.find(o => t.toLowerCase().includes(o.toLowerCase()));
-      if (matched) { await handlePostback(uid, "OCC_" + encodeURIComponent(matched)); }
-      else { await sendText(uid, "Please choose your occasion from the options below:"); await sendOccasionCards(uid); }
+      if (matched) {
+        await handlePostback(uid, "OCC_" + encodeURIComponent(matched));
+      } else {
+        await sendText(uid, "I-tap lang ang occasion mo sa ibaba ha! 😊");
+        await sendOccasionCards(uid);
+      }
       break;
     }
 
     case "others_sub": {
       const matched = OTHERS_SUB.find(o => t.toLowerCase().includes(o.title.toLowerCase()));
-      if (matched) { await handlePostback(uid, "OTHERSUB_" + encodeURIComponent(matched.title)); }
-      else { await sendText(uid, "Please choose one of these options:"); await sendOthersSubCards(uid); }
+      if (matched) {
+        await handlePostback(uid, "OTHERSUB_" + encodeURIComponent(matched.title));
+      } else {
+        await sendText(uid, "Piliin mo lang sa mga option sa ibaba: 👇");
+        await sendOthersSubCards(uid);
+      }
       break;
     }
 
     case "others_custom": {
       s.occasion = t;
       s.step = "others_specify";
-      await sendText(uid, "Got it - a " + t + " shoot! Could you tell us a bit more?\n\n- Theme or concept\n- Number of guests\n- Any special requests");
+      await sendText(uid, pick([
+        `Got it, ${t} shoot! 📸 Pwede mo bang ibigay ng konting details?\n\n- Theme o concept\n- Bilang ng guests\n- May special requests?`,
+        `Ayos, ${t}! 🎉 Para makapag-prepare kami, share mo lang:\n\n- Theme o concept\n- Number of guests\n- Anumang special request`,
+      ]));
       break;
     }
 
     case "others_specify": {
       s.eventNotes = t;
       s.step = "collect_details";
-      await sendText(uid, "Got it! Thanks for sharing those details.");
+      await sendText(uid, pick(DETAIL_ACK));
       await askForDetails(uid);
       break;
     }
@@ -479,19 +551,14 @@ async function handleMessage(uid, text) {
       if (parsed.name  && looksLikeName(parsed.name)   && !s.name)  s.name  = parsed.name;
       if (parsed.venue && looksLikeVenue(parsed.venue) && !s.venue) s.venue = parsed.venue;
 
-      // ── FIX: Store date + time together ──
       if (parsed.date && looksLikeDate(parsed.date) && !s.date) {
-        s.date = parsed.time
-          ? parsed.date + " at " + parsed.time
-          : parsed.date;
+        s.date = parsed.time ? `${parsed.date} at ${parsed.time}` : parsed.date;
       }
 
-      // Past date check
       if (parsed.date && isPastDate(parsed.date) && !s.date) {
-        await sendText(uid, "It looks like that date has already passed. Please double-check your event date!");
+        await sendText(uid, pick(PAST_DATE_MSG));
       }
 
-      // ── Celebrant detection ──
       if (!s.celebrant) {
         const parts = t.split(/[\n,]+/).map(p => p.trim()).filter(p => looksLikeName(p));
         if (parts.length >= 2 && !s.name)     { s.name = parts[0]; s.celebrant = parts[1]; }
@@ -500,70 +567,72 @@ async function handleMessage(uid, text) {
       }
 
       const missing = getMissingFields(s);
-      if (missing.length === 0) { await sendFinalSummary(uid); }
-      else { await askForDetails(uid); }
+      if (missing.length === 0) {
+        await sendText(uid, pick(DETAIL_ACK));
+        await sendFinalSummary(uid);
+      } else {
+        await askForDetails(uid);
+      }
       break;
     }
 
     default:
-      await sendButtonMsg(uid, "Not sure what you mean. Tap below or type hi to start.", [
-        { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
-        { type: "postback", title: "Talk to Our Team",    payload: "TALK_HUMAN"    },
-      ]);
+      console.log(`Unknown step "${s.step}" for ${uid} — silent.`);
+      break;
   }
 }
 
+// ── FINAL BOOKING SUMMARY ─────────────────────────────────────────────────────
 async function sendFinalSummary(uid) {
   const s = sessions[uid];
-  const inc = getInclusions(s.occasion).map(i => "  - " + i).join("\n");
+  const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
+
   const summary =
-    "Booking Inquiry Received! 📸\n\n" +
-    "Client Name : " + s.name + "\n" +
-    "Celebrant   : " + s.celebrant + "\n" +
-    "Occasion    : " + s.occasion + "\n" +
-    (s.eventNotes ? "Event Notes : " + s.eventNotes + "\n" : "") +
-    "Date & Time : " + s.date + "\n" +
-    "Location    : " + s.venue + "\n" +
-    "Rate        : " + s.price + "\n\n" +
-    "What's Included:\n" + inc;
+    "🎉 Natanggap na ang inyong booking inquiry!\n\n" +
+    `👤 Client     : ${s.name}\n` +
+    `🌟 Celebrant  : ${s.celebrant}\n` +
+    `🎊 Occasion   : ${s.occasion}\n` +
+    (s.eventNotes ? `📝 Notes      : ${s.eventNotes}\n` : "") +
+    `📅 Date & Time: ${s.date}\n` +
+    `📍 Location   : ${s.venue}\n` +
+    `💰 Rate       : ${s.price}\n\n` +
+    `📦 Kasama sa Package:\n${inc}`;
+
   await sendText(uid, summary);
   await sendText(uid, TRANSPORT_NOTE);
-  await sendText(uid, "Our team will reach out to confirm your booking shortly. Thank you for choosing Framepoint Photography! 🎉");
-  await sendButtonMsg(uid, "Is there anything else you need?", [
-    { type: "postback", title: "Book Another Event",     payload: "BOOK_ANOTHER" },
-    { type: "postback", title: "Talk to Our Team",       payload: "TALK_HUMAN"   },
-    { type: "postback", title: "That's all, thank you!", payload: "THATS_ALL"    },
+  await sendText(uid, pick(SUMMARY_CLOSING));
+
+  await sendButtonMsg(uid, "May iba pa ba? 😊", [
+    { type: "postback", title: "📅 Book Another Event",    payload: "BOOK_ANOTHER" },
+    { type: "postback", title: "💬 Kausapin ang Team",     payload: "TALK_HUMAN"   },
+    { type: "postback", title: "✅ Okay na, salamat!",     payload: "THATS_ALL"    },
   ]);
 
-  // ── ADMIN-ONLY toggle button — visible in the Messenger inbox on the page side ──
-  // This lets the admin pause/resume the bot for this specific user with one tap
+  // Admin controls
   await sendButtonMsg(uid,
-    "🤖 Admin Controls\n\n" +
-    "A new booking inquiry was received from this user.\n\n" +
-    "Tap below to pause the bot if you want to reply manually — tap again to resume.",
-    [
-      { type: "postback", title: "⏸️ Pause / ▶️ Resume Bot", payload: "TOGGLE_BOT_" + uid },
-    ]
+    "🤖 Admin Controls\n\nBagong booking inquiry na natanggap mula sa user na ito.\n\nI-tap para i-pause ang bot kung gusto mong personally mag-reply — i-tap ulit para i-resume.",
+    [{ type: "postback", title: "⏸️ Pause / ▶️ Resume Bot", payload: "TOGGLE_BOT_" + uid }]
   );
 
   sessions[uid] = { step: "done" };
 }
 
+// ── CARD SENDERS ──────────────────────────────────────────────────────────────
 async function sendOccasionCards(uid) {
   const row1 = TIER1_CARD_ORDER.map(occ => ({
-    title: occ, subtitle: "Tap to select",
+    title: occ, subtitle: "I-tap para piliin",
     image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
-    buttons: [{ type: "postback", title: "Select " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
+    buttons: [{ type: "postback", title: "Piliin: " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
   }));
   row1.push({
-    title: "Others", subtitle: "Gender Reveal, Baby Shower & more",
+    title: "Others", subtitle: "Gender Reveal, Baby Shower at iba pa",
     image_url: OCCASION_IMAGES["Others"],
-    buttons: [{ type: "postback", title: "Select Others", payload: "OCC_Others" }],
+    buttons: [{ type: "postback", title: "Piliin: Others", payload: "OCC_Others" }],
   });
   const row2 = TIER2_CARD_ORDER.map(occ => ({
-    title: occ, subtitle: "Tap to select",
+    title: occ, subtitle: "I-tap para piliin",
     image_url: OCCASION_IMAGES[occ] || OCCASION_IMAGES["Others"],
-    buttons: [{ type: "postback", title: "Select " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
+    buttons: [{ type: "postback", title: "Piliin: " + occ, payload: "OCC_" + encodeURIComponent(occ) }],
   }));
   await sendGenericTemplate(uid, row1);
   await sendGenericTemplate(uid, row2);
@@ -573,7 +642,7 @@ async function sendOthersSubCards(uid) {
   await callAPI({
     recipient: { id: uid },
     message: {
-      text: "Please choose your event type:",
+      text: "Piliin ang event type mo:",
       quick_replies: OTHERS_SUB.map(o => ({
         content_type: "text", title: o.title,
         payload: "OTHERSUB_" + encodeURIComponent(o.title),
@@ -582,9 +651,10 @@ async function sendOthersSubCards(uid) {
   });
 }
 
+// ── MESSENGER API HELPERS ─────────────────────────────────────────────────────
 async function callAPI(body) {
   try {
-    await axios.post("https://graph.facebook.com/v19.0/me/messages?access_token=" + PAGE_ACCESS_TOKEN, body);
+    await axios.post(`https://graph.facebook.com/v19.0/me/messages?access_token=${PAGE_ACCESS_TOKEN}`, body);
   } catch (e) { console.error("Messenger API error:", e.response?.data || e.message); }
 }
 async function sendText(uid, text) {
