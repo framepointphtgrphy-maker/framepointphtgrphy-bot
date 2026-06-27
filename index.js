@@ -167,6 +167,16 @@ const TRANSPORT_NOTE =
   "📍 Para malaman ang distance, i-check sa Google Maps mula sa venue ninyo papunta sa:\n" +
   "  Jollibee G. Tuazon, Manila";
 
+const PRICING_IMAGE_1 = "https://i.ibb.co/0psnGDHY/6a37ddf5-b808-415c-abea-ab8f7ecd593a.jpg";
+const PRICING_IMAGE_2 = "https://i.ibb.co/r2cHfWWD/ab99f85b-f247-41b8-89d2-65f936a315d8.jpg";
+
+const PACKAGE_INCLUSIONS_TEXT =
+  "📦 All packages include:\n" +
+  "  • 1 Professional Photographer\n" +
+  "  • 2-hour shoot coverage\n" +
+  "  • Soft copies via Google Drive\n" +
+  "  • Basic editing & color grading";
+
 const OCCASION_IMAGES = {
   "Birthday":            "https://i.ibb.co/xKVc5v1J/Birthday.png",
   "Christening/Baptism": "https://i.ibb.co/Z6gY1xz6/Christening-Baptism.png",
@@ -225,7 +235,6 @@ function looksLikeVenue(text) {
                "dont know","don't know","tbd","not yet","maybe","baka","siguro"];
   if (bad.includes(tl)) return false;
   if (t.length < 3) return false;
-  // Accept venue acronyms (PICC, SMX, BGC, WMC, etc.)
   if (/^[A-Z]{2,8}$/.test(t)) return true;
   const locationKeywords = /\b(city|hall|hotel|resort|park|church|chapel|resto|restaurant|barangay|brgy|bgy|qc|manila|makati|taguig|pasig|cavite|laguna|batangas|bulacan|pampanga|rizal|paranaque|las pinas|muntinlupa|caloocan|malabon|valenzuela|navotas|marikina|pasay|pateros|quezon|alabang|bgc|fort|ortigas|mandaluyong|san juan|antipolo|cainta|taytay|binangonan|angono|home|house|backyard|garden|venue|place|location|st\.|ave\.|blvd\.|road|street|purok|sitio|subdivision|village|subd|condo|tower|bldg|building|picc|smx|wmc|ice|function|ballroom|ground)\b/i;
   return locationKeywords.test(tl) || t.length >= 8;
@@ -268,6 +277,14 @@ function parseDetailBlob(text) {
     }
   }
   return result;
+}
+
+// ── SHARED PRICING DISPLAY ────────────────────────────────────────────────────
+async function sendPricingDisplay(uid) {
+  await sendText(uid, "Here are our packages! ⭐📸");
+  await sendImageMsg(uid, PRICING_IMAGE_1);
+  await sendImageMsg(uid, PRICING_IMAGE_2);
+  await sendText(uid, PACKAGE_INCLUSIONS_TEXT);
 }
 
 // ── WEBHOOK ──────────────────────────────────────────────────────────────────
@@ -331,18 +348,7 @@ async function handlePostback(uid, payload) {
   const s = sessions[uid];
 
   if (payload === "VIEW_PRICING") {
-    await sendText(uid,
-      "Here are our packages! 📸\n\n" +
-      "📦 Tier 1 — P2,499\n" +
-      "Birthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower, Monthsary/Anniversary\n\n" +
-      "📦 Tier 2 — P3,499\n" +
-      "Civil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n" +
-      "All packages include:\n" +
-      "  • 1 Professional Photographer\n" +
-      "  • 2-hour shoot coverage\n" +
-      "  • Soft copies via Google Drive\n" +
-      "  • Basic editing & color grading"
-    );
+    await sendPricingDisplay(uid);
     await sendText(uid, TRANSPORT_NOTE);
     await sendButtonMsg(uid, "Ready to book? 😊", [
       { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
@@ -504,19 +510,12 @@ async function handleMessage(uid, text) {
     if (s.occasion) {
       const inc = getInclusions(s.occasion).map(i => `  • ${i}`).join("\n");
       await sendText(uid,
-        `Here's our ${s.occasion} package!\n\n` +
+        `Here's our ${s.occasion} package! ⭐📸\n\n` +
         `💰 Rate: ${s.price || getPrice(s.occasion)}\n\n` +
         `📦 What's included:\n${inc}`
       );
     } else {
-      await sendText(uid,
-        "Here are our packages:\n\n" +
-        "📦 Tier 1 — P2,499\n" +
-        "Birthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower, Monthsary/Anniversary\n\n" +
-        "📦 Tier 2 — P3,499\n" +
-        "Civil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n" +
-        "All packages include a professional photographer, 2-hour coverage, and soft copies via Google Drive! 📸"
-      );
+      await sendPricingDisplay(uid);
     }
     await sendText(uid, TRANSPORT_NOTE);
     if (s.step === "collect_details") await askForDetails(uid);
@@ -686,6 +685,17 @@ async function callAPI(body) {
 }
 async function sendText(uid, text) {
   await callAPI({ recipient: { id: uid }, message: { text } });
+}
+async function sendImageMsg(uid, imageUrl) {
+  await callAPI({
+    recipient: { id: uid },
+    message: {
+      attachment: {
+        type: "image",
+        payload: { url: imageUrl, is_reusable: true },
+      },
+    },
+  });
 }
 async function sendButtonMsg(uid, text, buttons) {
   await callAPI({ recipient: { id: uid }, message: { attachment: { type: "template", payload: { template_type: "button", text, buttons } } } });
