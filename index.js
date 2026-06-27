@@ -320,14 +320,36 @@ app.post("/webhook", async (req, res) => {
 async function sendWelcomeCard(uid) {
   await sendText(uid, pick(GREET_REPLIES));
   await sendButtonMsg(uid, "What would you like to do?", [
-    { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
-    { type: "postback", title: "Talk to Our Team",    payload: "TALK_HUMAN"    },
+    { type: "postback", title: "Book an Appointment",    payload: "START_BOOKING" },
+    { type: "postback", title: "View Packages & Pricing", payload: "VIEW_PRICING"  },
+    { type: "postback", title: "Talk to Our Team",        payload: "TALK_HUMAN"    },
   ]);
 }
 
 // ── POSTBACKS ─────────────────────────────────────────────────────────────────
 async function handlePostback(uid, payload) {
   const s = sessions[uid];
+
+  if (payload === "VIEW_PRICING") {
+    await sendText(uid,
+      "Here are our packages! 📸\n\n" +
+      "📦 Tier 1 — P2,499\n" +
+      "Birthday, Christening/Baptism, Debut, Marriage Proposal, Family Reunion, Graduation, Pictorial, Gender Reveal, Baby Shower, Monthsary/Anniversary\n\n" +
+      "📦 Tier 2 — P3,499\n" +
+      "Civil Wedding, Pre-nup, Maternity, Corporate Party, Conferences, Concert\n\n" +
+      "All packages include:\n" +
+      "  • 1 Professional Photographer\n" +
+      "  • 2-hour shoot coverage\n" +
+      "  • Soft copies via Google Drive\n" +
+      "  • Basic editing & color grading"
+    );
+    await sendText(uid, TRANSPORT_NOTE);
+    await sendButtonMsg(uid, "Ready to book? 😊", [
+      { type: "postback", title: "Book an Appointment", payload: "START_BOOKING" },
+      { type: "postback", title: "Talk to Our Team",    payload: "TALK_HUMAN"    },
+    ]);
+    return;
+  }
 
   if (payload === "START_BOOKING" || payload === "BOOK_ANOTHER") {
     sessions[uid] = { step: "occasion" };
